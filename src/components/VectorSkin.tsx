@@ -6,7 +6,7 @@ import type {
 } from "@quartz-community/types";
 import { Marked } from "marked";
 import { pathToRoot } from "@quartz-community/utils";
-import type { VectorSkinOptions } from "../types";
+import type { VectorSkinOptions, VectorNavigationTemplate } from "../types";
 import { resolveOptions, safeUrl } from "../vector-options";
 import { i18n } from "../i18n";
 import style from "./styles/vector.scss";
@@ -160,7 +160,7 @@ export const VectorHeader = ((options?: VectorSkinOptions) => {
       : fallback;
   Header.css =
     style +
-    `:root:has([data-qv-skin]){--qv-footer-light:${footerColor(options?.footerTextColors?.light, "#000")};--qv-footer-dark:${footerColor(options?.footerTextColors?.dark, "#fff")};}`;
+    `:root:has([data-qv-skin]){--qv-footer-light:${footerColor(options?.footerTextColors?.light, "var(--qv-fg)")};--qv-footer-dark:${footerColor(options?.footerTextColors?.dark, "var(--qv-fg)")};}`;
   Header.afterDOMLoaded = script;
   return Header;
 }) satisfies QuartzComponentConstructor;
@@ -341,6 +341,115 @@ export const VectorFooter = ((options?: VectorSkinOptions) => {
   return Footer;
 }) satisfies QuartzComponentConstructor;
 
+/** Page frontmatter navboxes accepts template indexes or inline template objects. */
+export const VectorNavigation = ((options?: VectorSkinOptions) => {
+  const Navigation: QuartzComponent = (props) => {
+    const configured = options?.navigationTemplates ?? [];
+    const selected = props.fileData.frontmatter?.navboxes;
+    if (!Array.isArray(selected) || !selected.length) return null;
+    const base = `${pathToRoot(props.fileData.slug ?? ("index" as FullSlug))}/`;
+    const url = (href: string) => {
+      const value = safeUrl(href);
+      return /^(?:https?:|\/|#|\.{1,2}\/)/i.test(value) ? value : base + value;
+    };
+    const origin = `https://${props.cfg.baseUrl || "quartz.invalid"}`;
+    const current = new URL(
+      base + (props.fileData.slug ?? "index"),
+      new URL("/" + (props.fileData.slug ?? "index"), origin),
+    );
+    const canonical = (pathname: string) =>
+      decodeURI(pathname)
+        .replace(/\.html$/, "")
+        .replace(/\/index\/?$/, "/")
+        .replace(/\/$/, "");
+    const isCurrent = (href: string) => {
+      try {
+        const target = new URL(url(href), new URL("/" + (props.fileData.slug ?? "index"), origin));
+        return (
+          target.origin === current.origin &&
+          canonical(target.pathname) === canonical(current.pathname)
+        );
+      } catch {
+        return false;
+      }
+    };
+    const colors = (template: VectorNavigationTemplate) => {
+      const valid = (value?: string) =>
+        value && /^(?:#[0-9a-f]{3}|#[0-9a-f]{4}|#[0-9a-f]{6}|#[0-9a-f]{8})$/i.test(value)
+          ? value
+          : undefined;
+      return {
+        "--qv-box-light": valid(template.color?.light),
+        "--qv-box-dark": valid(template.color?.dark),
+      };
+    };
+    const markdown = new Marked({
+      renderer: {
+        link(token) {
+          if (isCurrent(token.href))
+            return `<span class="qv-selflink" aria-current="page">${this.parser.parseInline(token.tokens)}</span>`;
+          return false;
+        },
+        html: ({ text }) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+      },
+      walkTokens(token) {
+        if (token.type === "link" || token.type === "image") token.href = url(token.href);
+      },
+    });
+    const text = (value: string) => ({ __html: markdown.parseInline(value, { async: false }) });
+    const templates = selected
+      .map((item) => (typeof item === "number" ? configured[item] : item))
+      .filter(
+        (item): item is VectorNavigationTemplate =>
+          !!item && typeof item.title === "string" && Array.isArray(item.rows),
+      );
+    if (!templates.length) return null;
+    return (
+      <nav class="qv-navboxes" aria-label="导航模板">
+        {templates.map((template) => (
+          <details class="qv-navbox" open={!template.collapsed} style={colors(template)}>
+            <summary>
+              <strong dangerouslySetInnerHTML={text(template.title)} />
+              <span class="qv-navbox-toggle" aria-hidden="true">
+                <span class="qv-navbox-expand">[展开]</span>
+                <span class="qv-navbox-collapse">[折叠]</span>
+              </span>
+            </summary>
+            <div class="qv-navbox-body">
+              {!!template.links?.length && (
+                <div class="qv-navbox-actions">
+                  {template.links.map((link) =>
+                    isCurrent(link.href) ? (
+                      <span class="qv-selflink" aria-current="page">
+                        {link.label}
+                      </span>
+                    ) : (
+                      <a href={url(link.href)}>{link.label}</a>
+                    ),
+                  )}
+                </div>
+              )}
+              {template.above && (
+                <div class="qv-navbox-above" dangerouslySetInnerHTML={text(template.above)} />
+              )}
+              {template.rows.map((row) => (
+                <div class="qv-navbox-row">
+                  <div class="qv-navbox-label" dangerouslySetInnerHTML={text(row.label)} />
+                  <div class="qv-navbox-list" dangerouslySetInnerHTML={text(row.content)} />
+                </div>
+              ))}
+              {template.below && (
+                <div class="qv-navbox-below" dangerouslySetInnerHTML={text(template.below)} />
+              )}
+            </div>
+          </details>
+        ))}
+      </nav>
+    );
+  };
+  return Navigation;
+}) satisfies QuartzComponentConstructor;
+
 /** Convenience factory for a complete set of matching layout components. */
 export function VectorSkin(options: VectorSkinOptions = {}) {
   return {
@@ -349,5 +458,6 @@ export function VectorSkin(options: VectorSkinOptions = {}) {
     appearance: VectorAppearance(options),
     revision: VectorRevision(options),
     footer: VectorFooter(options),
+    navigation: VectorNavigation(options),
   };
 }

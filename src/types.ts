@@ -86,6 +86,20 @@ export interface VectorSkinOptions {
   /** Footer paragraphs, each containing plain text or links. No HTML is accepted. */
   footerParagraphs?: Array<Array<{ text: string; href?: string; bold?: boolean }>>;
   footerLinks?: Array<{ label: string; href: string }>;
+  /** Shared navigation templates, also selectable by index in page frontmatter. */
+  navigationTemplates?: VectorNavigationTemplate[];
   /** Links shown inside the main menu. */
   navigation?: Array<{ label: string; href: string; section?: string }>;
+}
+
+/** A MediaWiki-style navigation box; text fields accept Markdown. */
+export interface VectorNavigationTemplate {
+  title: string;
+  /** Header theme colors; group backgrounds are derived automatically. */
+  color?: { light?: string; dark?: string };
+  collapsed?: boolean;
+  above?: string;
+  below?: string;
+  rows: Array<{ label: string; content: string }>;
+  links?: Array<{ label: string; href: string }>;
 }

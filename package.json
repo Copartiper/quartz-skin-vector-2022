@@ -1,6 +1,6 @@
 {
   "name": "quartz-skin-vector",
-  "version": "0.1.10",
+  "version": "0.1.16",
   "description": "Vector 2022 skin components for Quartz",
   "type": "module",
   "license": "GPL-2.0-or-later",
@@ -111,7 +111,7 @@
       "component",
       "emitter"
     ],
-    "version": "0.1.10",
+    "version": "0.1.16",
     "quartzVersion": ">=5.0.0",
     "dependencies": [],
     "defaultOrder": 50,
@@ -203,6 +203,77 @@
       },
       "revisionTimeZone": {
         "type": "string"
+      },
+      "navigationTemplates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "collapsed": {
+              "type": "boolean"
+            },
+            "above": {
+              "type": "string"
+            },
+            "below": {
+              "type": "string"
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "label",
+                  "content"
+                ]
+              }
+            },
+            "links": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "type": "string"
+                  },
+                  "href": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "label",
+                  "href"
+                ]
+              }
+            },
+            "color": {
+              "type": "object",
+              "properties": {
+                "light": {
+                  "type": "string"
+                },
+                "dark": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "required": [
+            "title",
+            "rows"
+          ]
+        }
       }
     },
     "components": {

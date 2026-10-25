@@ -16,6 +16,24 @@ const props = {
   cfg: { pageTitle: "知识百科", locale: "zh-CN" },
   fileData: {
     slug: "index",
+    frontmatter: {
+      tags: ["知识", "分类"],
+      navboxes: [
+        {
+          title: "认识论",
+          rows: [
+            { label: "学者", content: "[柏拉图](plato) · [亚里士多德](aristotle)" },
+            { label: "理论", content: "[知识](knowledge) · **真理**" },
+          ],
+          below: "[分类](tags/)",
+        },
+        {
+          title: "知识管理",
+          collapsed: true,
+          rows: [{ label: "概念", content: "[知识](knowledge)" }],
+        },
+      ],
+    },
     toc: [
       { depth: 1, text: "概述", slug: "overview" },
       { depth: 2, text: "设计与排版", slug: "design" },
@@ -25,8 +43,8 @@ const props = {
   },
 };
 const component = (value) => render(h(value, props));
-const base = `.page>#quartz-body .page-header{margin:6rem 0 0}.page>#quartz-body{grid-template-areas:"grid-sidebar-left grid-header grid-sidebar-right" "grid-sidebar-left grid-center grid-sidebar-right" "grid-sidebar-left grid-footer grid-sidebar-right"}.page>#quartz-body .sidebar.left{grid-area:grid-sidebar-left}.page>#quartz-body .sidebar.right{grid-area:grid-sidebar-right}.page>#quartz-body .center{min-width:100%}.page>#quartz-body footer{grid-area:grid-footer}body{margin:0}.page{max-width:1500px;margin:auto}#quartz-body{display:grid}.sidebar{display:flex;flex-direction:column}article{min-width:0}.page-header{margin:2rem 0}.article-title{margin-bottom:.5rem}button{cursor:pointer}.search-container{display:none}.search-container.open{display:block;position:fixed;inset:20%;background:var(--qv-bg);border:1px solid;padding:2rem;z-index:100}`;
-const html = `<!doctype html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${base}\n${skin.header.css}</style></head><body><div class="page" id="quartz-root"><div id="quartz-body"><aside class="sidebar left"><div class="search"><button class="search-button">搜索本站</button><div class="search-container"><input aria-label="搜索" placeholder="搜索知识百科"></div></div></aside><div class="center"><div class="page-header"><header></header><div class="popover-hint">${component(skin.header)}<h1 class="article-title">知识的连接与发现</h1><p class="content-meta">2026年10月25日 · 阅读时间 3 分钟</p><nav class="qv-page-tools"><details class="qv-dock qv-toc-menu" data-qv-dock="toc"><summary aria-label="目录">☰</summary>${component(skin.toc)}</details><details class="qv-dock" data-qv-dock="explorer"><summary>探索</summary><nav class="qv-dock-panel" data-qv-panel="explorer"><div class="qv-menu-heading"><strong>探索</strong><button type="button" class="qv-menu-pin qv-dock-pin" data-pin-label="移至侧栏" data-unpin-label="隐藏">移至侧栏</button></div><a href="#overview">页面树</a></nav></details></nav></div></div><article class="popover-hint"><p>欢迎来到知识百科。这是一个由 <a href="#design">Quartz</a> 驱动的知识花园，采用 Vector 2022 的阅读布局。</p><h2 id="overview">概述</h2><p>知识来自持续的探索、记录与交流。这里的每一篇笔记都可以成为理解世界的一个起点。</p><blockquote>让知识自由生长，让想法彼此连接。</blockquote><h3 id="design">设计与排版</h3><p>简洁的导航、清晰的章节层次与舒适的行宽，将注意力留给内容。通过右侧的外观设置，可以调整阅读体验。</p><table><thead><tr><th>功能</th><th>说明</th></tr></thead><tbody><tr><td>目录</td><td>快速定位文章章节</td></tr><tr><td>外观</td><td>字号、宽度与配色设置</td></tr></tbody></table><span id="100%"></span><h2 id="reading">延伸阅读</h2><p>探索更多主题，发现新的联系。</p>${"<p>阅读、思考、连接。把分散的信息整理成有意义的知识。</p>".repeat(12)}</article><div class="page-footer"></div></div><aside class="sidebar right">${component(skin.appearance)}</aside><footer>知识百科 · Powered by Quartz · Vector 2022 skin</footer></div></div><script>window.cleanups=[];window.addCleanup=fn=>window.cleanups.push(fn);document.querySelector('.search-button').onclick=()=>document.querySelector('.search-container').classList.add('open');</script><script>${skin.header.afterDOMLoaded}</script></body></html>`;
+const base = `.page>#quartz-body .page-header{margin:6rem 0 0}.page>#quartz-body{grid-template-areas:"grid-sidebar-left grid-header grid-sidebar-right" "grid-sidebar-left grid-center grid-sidebar-right" "grid-sidebar-left grid-footer grid-sidebar-right"}.page>#quartz-body .sidebar.left{grid-area:grid-sidebar-left}.page>#quartz-body .sidebar.right{grid-area:grid-sidebar-right}.page>#quartz-body .center{min-width:100%}.page>#quartz-body footer{grid-area:grid-footer}footer{opacity:.7}body{margin:0}.page{max-width:1500px;margin:auto}#quartz-body{display:grid}.sidebar{display:flex;flex-direction:column}article{min-width:0}.page-header{margin:2rem 0}.article-title{margin-bottom:.5rem}button{cursor:pointer}.search-container{display:none}.search-container.open{display:block;position:fixed;inset:20%;background:var(--qv-bg);border:1px solid;padding:2rem;z-index:100}`;
+const html = `<!doctype html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${base}\n${skin.header.css}</style></head><body><div class="page" id="quartz-root"><div id="quartz-body"><aside class="sidebar left"><div class="search"><button class="search-button">搜索本站</button><div class="search-container"><input aria-label="搜索" placeholder="搜索知识百科"></div></div></aside><div class="center"><div class="page-header"><header></header><div class="popover-hint">${component(skin.header)}<h1 class="article-title">知识的连接与发现</h1><p class="content-meta">2026年10月25日 · 阅读时间 3 分钟</p><nav class="qv-page-tools"><details class="qv-dock qv-toc-menu" data-qv-dock="toc"><summary aria-label="目录">☰</summary>${component(skin.toc)}</details><details class="qv-dock" data-qv-dock="explorer"><summary>探索</summary><nav class="qv-dock-panel" data-qv-panel="explorer"><div class="qv-menu-heading"><strong>探索</strong><button type="button" class="qv-menu-pin qv-dock-pin" data-pin-label="移至侧栏" data-unpin-label="隐藏">移至侧栏</button></div><a href="#overview">页面树</a></nav></details></nav></div></div><article class="popover-hint"><p>欢迎来到知识百科。这是一个由 <a href="#design">Quartz</a> 驱动的知识花园，采用 Vector 2022 的阅读布局。</p><h2 id="overview">概述</h2><p>知识来自持续的探索、记录与交流。这里的每一篇笔记都可以成为理解世界的一个起点。</p><blockquote>让知识自由生长，让想法彼此连接。</blockquote><h3 id="design">设计与排版</h3><p>简洁的导航、清晰的章节层次与舒适的行宽，将注意力留给内容。通过右侧的外观设置，可以调整阅读体验。</p><table><thead><tr><th>功能</th><th>说明</th></tr></thead><tbody><tr><td>目录</td><td>快速定位文章章节</td></tr><tr><td>外观</td><td>字号、宽度与配色设置</td></tr></tbody></table><span id="100%"></span><h2 id="reading">延伸阅读</h2><p>探索更多主题，发现新的联系。</p>${"<p>阅读、思考、连接。把分散的信息整理成有意义的知识。</p>".repeat(12)}</article><div class="page-footer">${component(skin.navigation)}<nav class="qv-categories"><a href="tags/">分类</a>：<ul class="tags"><li><a class="internal tag-link" href="tags/knowledge">知识</a></li><li><a class="internal tag-link" href="tags/category">分类</a></li></ul></nav></div></div><aside class="sidebar right">${component(skin.appearance)}</aside><footer class="qv-site-footer">知识百科 · Powered by Quartz · Vector 2022 skin</footer></div></div><script>window.cleanups=[];window.addCleanup=fn=>window.cleanups.push(fn);document.querySelector('.search-button').onclick=()=>document.querySelector('.search-container').classList.add('open');</script><script>${skin.header.afterDOMLoaded}</script></body></html>`;
 const server = createServer((req, res) => {
   if (req.url.endsWith("vector-search.json")) {
     res.setHeader("Content-Type", "application/json");
@@ -46,6 +64,12 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true, channel: "chromium" });
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await page.setContent(html);
+  assert.equal(await page.locator(".qv-navbox").count(), 2);
+  await page.locator(".qv-navbox").first().locator("summary").click();
+  assert.equal(await page.locator(".qv-navbox").first().getAttribute("open"), null);
+  await page.locator(".qv-navbox").first().locator("summary").click();
+  assert.equal(await page.locator(".qv-navbox").first().getAttribute("open"), "");
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.address().port}`);
@@ -76,6 +100,10 @@ try {
   });
   await page.keyboard.press("Escape");
   assert.equal(await page.locator(".qv-menu").getAttribute("open"), null);
+  assert.equal(
+    await page.locator(".qv-site-footer").evaluate((el) => getComputedStyle(el).opacity),
+    "1",
+  );
   const geometry = await page.locator(".center").boundingBox();
   await page.locator('[data-qv-panel="appearance"] .qv-dock-pin').click();
   assert.equal(await page.locator(".qv-appearance-menu").isVisible(), true);
@@ -140,6 +168,31 @@ try {
   );
   const suggestionsInput = page.locator(".qv-search-form input");
   await suggestionsInput.fill("正文独有");
+  await page.locator(".qv-full-search strong").waitFor();
+  assert.equal(await page.locator(".qv-full-search strong").textContent(), "正文独有");
+  assert.equal(
+    await page.locator(".qv-full-search strong").evaluate((el) => getComputedStyle(el).display),
+    "inline",
+  );
+  await page.evaluate(() => {
+    for (const className of ["popover", "search-container"]) {
+      const preview = document.createElement("div");
+      preview.className = className;
+      preview.dataset.testPreview = "true";
+      const header = document.createElement("header");
+      header.className = "qv-header";
+      header.textContent = "Preview header";
+      preview.append(header);
+      document.body.append(preview);
+    }
+  });
+  for (const header of await page.locator("[data-test-preview] .qv-header").all()) {
+    assert.equal(await header.evaluate((el) => getComputedStyle(el).display), "none");
+  }
+  await page
+    .locator("[data-test-preview]")
+    .evaluateAll((elements) => elements.forEach((el) => el.remove()));
+
   await page.locator(".qv-full-search").waitFor({ state: "visible" });
   assert.equal(await page.locator(".qv-suggestion").count(), 0);
   assert.equal(await page.locator(".search-container.open").count(), 0);

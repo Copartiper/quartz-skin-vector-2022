@@ -1,142 +1,218 @@
 # Quartz Vector 2022 Skin
 
-将 MediaWiki Vector 2022 的布局与排版移植到 Quartz 的组件插件。包含站点页头、主菜单、左侧目录、右侧外观面板、响应式正文、打印样式，以及中文和英文界面。
+让 Quartz 看起来更像维基百科：顶部搜索、可移入侧栏的菜单、文章目录、外观设置，以及文章底部的导航模板和分类栏。
 
-适用于 Quartz 5 社区插件系统和标准 Quartz 布局 DOM（`#quartz-body`、`.center`、`.sidebar.left/right`）。本插件不是 MediaWiki 运行环境，不提供账户、编辑、历史、语言版本切换等需要后端的功能。未包含 Wikipedia 标志。
+皮肤适用于 Quartz 5 社区插件系统。中文、英文界面都可以使用，手机上也能阅读。它主要负责页面外观；账户、在线编辑、页面历史等 MediaWiki 后台功能，需要另外实现。
 
-## 本地构建与安装
+## 已经装好了，想改点东西？
 
-需要 Node.js >= 22、npm >= 10.9.2。
+如果你正在维护 `wiki.clytam.net`，通常只需要改两个地方：
 
-```sh
-# 在本仓库
-npm ci
-npm run build
-npm test
-npm pack
+- **改全站设置**：打开 `quartz.config.yaml`，找到 `vectorSkin`。
+- **改某篇文章**：打开对应的 Markdown 文件，修改开头两条 `---` 之间的属性，或下面的正文。
 
-# 在 Quartz 项目目录，替换为生成包的实际路径
-npm install /absolute/path/quartz-skin-vector-0.1.10.tgz
-```
+改好后，在站点目录运行 `npx quartz build`。如果已经开着 `npx quartz build --serve`，保存后会自动重新构建。
 
-包名为 `quartz-skin-vector`，当前仓库尚未发布到 npm。`npm pack` 会自动构建；Git 来源安装通过 `prepare` 构建。不需要将上游 `mediawiki-skins-Vector/` 复制到站点中。
+`vectorSkin` 是站点的布局适配器读取的配置。新站点需要先接入适配器，单独往 YAML 里加这一段还不会生效。首次安装请看后面的「在新站点中接入」。
 
-## 布局接入
+## 换站名、标志和主菜单
 
-在 `quartz.layout.ts` 中导入组件，保留站点已有的 `Head`、正文标题、元数据和页脚配置。示例展示需要替换的布局槽位：
-
-```ts
-import { VectorSkin } from "quartz-skin-vector";
-import * as Component from "./quartz/components";
-
-const vector = VectorSkin({
-  locale: "zh-CN",
-  wordmark: "知识百科",
-  tagline: "自由的知识花园",
-  navigation: [
-    { label: "首页", href: "/" },
-    { label: "关于", href: "/about" },
-  ],
-});
-
-// 将下列字段合并到已有的 contentPage 和 listPage 布局中。
-// VectorHeader 必须每页恰好安装一次；同时替换旧 PageTitle、TOC、Darkmode。
-const vectorSlots = {
-  header: [],
-  beforeBody: [vector.header, Component.ArticleTitle(), Component.ContentMeta()],
-  left: [vector.toc, Component.Search()],
-  right: [vector.appearance],
-};
-
-// 示例：export const contentPage = { ...existingContentPage, ...vectorSlots }
-// 列表页也应采用相同的 vectorSlots；没有章节的页面仍可正常渲染。
-```
-
-`VectorSkin()` 返回一组组件供布局使用，不是 transformer，不要放进 `plugins.transformers`。也可以分别导入 `VectorHeader(options)`、`VectorTOC(options)`、`VectorAppearance(options)`；三个组件应使用相同参数。样式和浏览器脚本由 `VectorHeader` 注入。
-
-`package.json` 的 `quartz.components` 提供自动发现信息，默认槽位为 `beforeBody` / `left` / `right`。不同宿主的配置文件格式可能不同；直接布局接入如上所示。
-
-目录数据来自 Quartz 的 `fileData.toc`：请保留 `Plugin.TableOfContents()` transformer。没有该 transformer 时目录只显示“序言”。页头搜索入口调用已有 Quartz Search 的按钮，需要在布局中保留 `Component.Search()`，以及 Quartz 默认内容索引 emitter。未安装 Search 时，脚本会隐藏页头搜索入口。
-
-站点部署在子路径时，默认首页链接会按当前 slug 计算相对路径。`navigation.href`、`logoUrl` 的普通相对路径从站点根目录解析；绝对 URL、`/`、`#`、`./` 和 `../` 开头的路径原样保留。`homeUrl` 原样使用。
-
-## 配置选项
-
-| 选项              | 默认值       | 说明                                                                                |
-| ----------------- | ------------ | ----------------------------------------------------------------------------------- |
-| `locale`          | `"auto"`     | `auto` 使用 Quartz locale；支持 `en-US`、`zh-CN`，其他语言回退英文，`zh-*` 使用中文 |
-| `wordmark`        | `""`         | 空值使用 Quartz `pageTitle`，再回退 `Quartz`                                        |
-| `tagline`         | `""`         | 空值使用本地化的站点副标题                                                          |
-| `homeUrl`         | `""`         | 空值自动计算站点根目录；支持相对路径及 HTTP(S)                                      |
-| `defaultTheme`    | `"auto"`     | `auto` / `light` / `dark`                                                           |
-| `defaultTextSize` | `"standard"` | `small` / `standard` / `large`（14 / 16 / 18 px 的默认浏览器字号）                  |
-| `defaultWidth`    | `"standard"` | `standard` 正文上限 948 px；`wide` 填满可用中栏                                     |
-| `showAppearance`  | `true`       | 是否渲染外观面板                                                                    |
-| `navigation`      | `[]`         | 主菜单链接数组，格式 `{ label: string, href: string }[]`                            |
-
-访客设置保存在本站 localStorage 的 `quartz-vector-*` 键中，优先于默认值。禁止存储时本次页面仍可切换。自动配色会跟随系统变化，并通过 Quartz 的 `saved-theme` 和 `themechange` 事件同步其他组件。建议移除原有 Darkmode 组件，避免两个主题控件同时管理设置。
-
-大屏采用三栏；1120 px 以下外观面板移至正文下方，800 px 以下目录和正文顺序排列。菜单和目录使用原生 details，可键盘操作。无 JavaScript 时保留正文样式、目录链接、主菜单和默认外观；偏好切换、跳转正文锚点与目录高亮由脚本初始化。使用现代浏览器（CSS `:has()`）。不支持旧版浏览器和完全改写标准 DOM 的自定义布局。
-
-## 开发与验证
-
-```sh
-npm run typecheck
-npm test
-npm run build
-# 首次安装浏览器后运行集成检查
-npx playwright install chromium
-npm run test:browser
-```
-
-浏览器测试使用标准 Quartz 页面结构的独立 fixture，检查 1440 / 1024 / 390 px 布局、设置持久化、跟随系统配色、Quartz 搜索触发与 nav/render 重初始化，预览 HTML 和截图写入系统临时目录 `quartz-vector-preview/`。这不等同于在完整 Quartz 站点中执行端到端构建；接入具体站点后仍需运行其构建与检查。
-
-## 来源与许可证
-
-参考仓库中提供的 `mediawiki-skins-Vector`，主要对应 `skin.mustache`、`variables.less`、`layouts/grid.less`、`typography.less`，将 Mustache / LESS / MediaWiki 依赖改写为 Preact / SCSS / Quartz 浏览器脚本。保留 Vector 2022 的 1596 px 页面容器、948 px 正文上限、侧栏、衬线标题与内容排版。
-
-移植版以 **GPL-2.0-or-later** 交付，见 `LICENSE` / `LICENSE.Vector` 和 `NOTICE`；npm 包同时包含可重建的源码与构建配置；依赖锁文件保留在仓库中。原始 Quartz 插件模板的 MIT 许可证保存在 `LICENSE.template`。这是独立移植项目，不代表 Wikimedia 或 Quartz 官方。
-
-主菜单支持「移至侧栏」与「隐藏」，选择保存在浏览器本地；小于 1120px 时自动使用弹出菜单。默认按首页、分类索引、特色内容、新闻动态、随机条目、联络我们、关于站点及贡献分组显示。`navigation` 提供时替换整个菜单（包括首页），空数组显示空菜单。分类索引指向 `tags/`，其余默认链接指向对应中文页面（关于站点指向 `关于`），需要在站点中创建页面或配置真实链接；静态站点不提供 MediaWiki 的最近更改、特殊页面后台功能。
-
-`logoUrl` 配置标题左侧图片，空值隐藏；`logoAlt` 配置替代文本。`navigation` 项目可带 `section`，在该项上方显示分组标题。站点可在 `quartz.config.yaml` 顶层添加 `vectorSkin`，由布局适配器传入 `VectorSkin`：
+下面这些设置都放在 `quartz.config.yaml` 的 `vectorSkin` 下。已有这个区块时，请修改里面的内容，不要再新建一个同名区块。
 
 ```yaml
 vectorSkin:
   locale: zh-CN
+  wordmark: 我的知识库
+  tagline: 记录、连接、分享
   logoUrl: static/icon.png
-  logoAlt: 站点标志
-  tagline: 自定义副标题
+  logoAlt: 我的知识库标志
   navigation:
     - label: 首页
       href: index
     - label: 分类索引
       href: tags/
-    - section: 贡献
-      label: 帮助
-      href: 帮助
+    - section: 参与
+      label: 关于本站
+      href: about
 ```
 
-顶部搜索表单会将输入词传给 Quartz Search；必须保留 Search 组件及其资源，皮肤隐藏其原始侧栏按钮。
+`wordmark` 是顶部站名；不填就使用 Quartz 的 `pageTitle`。`tagline` 是下面的小字。`logoUrl` 是标志图片的路径，留空就不显示图片。
 
-`VectorSearchIndex()` 发射器输出 `static/vector-search.json`（仅标题、描述、slug），请加入 `config.plugins.emitters`；顶部候选不会搜索正文，底部操作再打开 Quartz 原生全文搜索及预览。`VectorSkin().revision` 可放在 `afterBody`，读取 `dates.modified`，通过 `revisionTimeZone`（默认 `Asia/Shanghai`）格式化修订时间；没有修改日期时不显示。
+主菜单里，一项就是一个链接：`label` 写显示名称，`href` 写目标页面。加上 `section`，会在这一项前面显示分组标题。提供 `navigation` 后，会替换整个默认菜单，所以首页也要自己写进去。写成 `navigation: []` 则会清空菜单。
 
-外观面板通过「隐藏」移到顶栏右上角，展开后可「移至侧栏」恢复。目录和探索的面板同样支持固定到左侧，顺序为主菜单、目录、探索。目录未固定时使用文章标题左侧的三横杠入口；侧栏隐藏后正文位置和宽度保持不变。选择存储在浏览器本地，小屏幕使用弹出面板。
+链接一般写成 `about` 或 `notes/example`，不用加 `.md`。这种路径从站点根目录开始找，放在不同层级的文章里也能指向同一页。外部链接直接写完整的 `https://...` 地址。菜单不会自动创建页面，请确认目标文章已经存在。
 
-Footer content can be configured with `footerParagraphs` (arrays of text segments
-with `text`, optional `href`, and optional `bold`) and `footerLinks` (objects
-with `label` and `href`). Render `VectorSkin(options).footer` inside your footer
-after the revision component. URLs are validated and text is escaped.
-Narrow screens (below 1120px) always use menu buttons without sidebar tracks,
-while preserving desktop docking preferences. A floating contents button appears
-when its regular entry leaves the viewport.
+## 调整菜单和阅读外观
 
-Use `footerMarkdown: |` in `vectorSkin` to write footer body text in Markdown,
-including bold text, paragraphs, and links. It takes precedence over the older
-`footerParagraphs` field. Raw HTML is escaped, and relative links resolve from
-the site root. Pages without headings omit the entire contents menu.
+主菜单、目录、探索都可以「移至侧栏」，也可以点「隐藏」放回按钮里。左侧从上到下是主菜单、目录、探索。外观面板固定在右侧，隐藏后通过右上角的眼镜按钮打开。
 
-Footer text follows the active theme. Configure `footerTextColors.light`
-(default `"#000000"`) and `footerTextColors.dark` (default `"#ffffff"`).
-Each accepts a hex color or a CSS theme variable such as `var(--qv-fg)`.
-Links keep their separate link colors.
+桌面端会保留两侧空间，所以隐藏菜单不会让正文突然左右移动。页面窄于 1120 px 时，四个菜单都改用按钮打开，并取消侧栏留白。没有分节的文章不显示目录；目录入口滚出屏幕后，左上角会出现悬浮目录按钮。
+
+你可以设置访客第一次打开网站时的阅读外观：
+
+```yaml
+vectorSkin:
+  defaultTheme: auto # auto 跟随系统，也可以填 light 或 dark
+  defaultTextSize: standard # small、standard 或 large
+  defaultWidth: standard # standard 或 wide
+  showAppearance: true
+```
+
+浏览器会记住访客自己的选择，之后优先使用这些选择。因此，改了默认设置却没看到变化时，可以先检查浏览器里是否已经选过其他设置。
+
+顶部搜索先给出匹配标题或描述的候选。想搜正文时，点击候选框底部的「搜索包含……的页面」，就会打开 Quartz 原来的全文搜索和页面预览。搜索词会加粗显示，链接预览和搜索预览中会隐藏网站页头，只保留文章内容。
+
+## 写页脚
+
+页脚正文用 Markdown 写，和平时写文章差不多。链接列表单独放在 `footerLinks` 中：
+
+```yaml
+vectorSkin:
+  revisionTimeZone: Asia/Shanghai
+  footerMarkdown: |
+    本站文字按 **[许可协议](https://example.org/license)** 提供。
+
+    继续使用本站前，请阅读[使用条款](usage)。
+  footerLinks:
+    - label: 关于本站
+      href: about
+    - label: 联系方式
+      href: contact
+```
+
+正文颜色和链接颜色默认跟随文章配色，页脚没有单独的纯色背景。修订时间显示在页脚正文上方。`wiki.clytam.net` 使用文章最近一次 Git 提交的时间；文章尚未提交时，使用本地文件修改时间，不会把故事里的年代当成修订日期。
+
+需要单独指定页脚文字颜色时，可以加上：
+
+```yaml
+footerTextColors:
+  light: "var(--qv-fg)"
+  dark: "var(--qv-fg)"
+```
+
+这里可以填十六进制颜色，也可以使用 `var(--变量名)`。`var(--qv-fg)` 就是正文文字颜色。旧配置 `footerParagraphs` 仍然可用，但同时写了 `footerMarkdown` 时，以 Markdown 为准。
+
+## 给文章加导航模板
+
+导航模板就是文章底部那块分组链接。比如「克莱拓姆协约」模板，可以把地理、组织、历史的相关文章放在一起。
+
+最常用的方式是：**全站写一份模板，多篇文章一起引用。**
+
+先在 `vectorSkin` 下写模板：
+
+```yaml
+vectorSkin:
+  navigationTemplates:
+    - title: "[我的知识库](index)"
+      collapsed: false
+      color:
+        light: "#c5d8ef"
+        dark: "#293e57"
+      rows:
+        - label: 入门
+          content: "[简介](about) · [使用方法](guide)"
+        - label: 相关页面
+          content: "[常见问题](faq) · [联系方式](contact)"
+      below: "[分类索引](tags/)"
+```
+
+再到要显示它的文章里，加上 `navboxes`：
+
+```yaml
+---
+title: 使用方法
+navboxes: [0]
+---
+这里是文章正文。
+```
+
+`0` 表示配置里的第一个模板，`1` 表示第二个。写成 `navboxes: [0, 1]`，就会按这个顺序显示两个模板。不写 `navboxes` 的文章不会出现模板。
+
+模板里这些字段可以这样理解：
+
+| 字段             | 写什么                                      |
+| ---------------- | ------------------------------------------- |
+| `title`          | 模板标题，可以带链接                        |
+| `collapsed`      | `true` 表示默认收起，`false` 表示默认展开   |
+| `color.light`    | 浅色主题下的标题背景色，例如 `"#c5d8ef"`    |
+| `color.dark`     | 深色主题下的标题背景色，例如 `"#293e57"`    |
+| `rows`           | 每个分组的名称 `label` 和链接内容 `content` |
+| `above`、`below` | 分组上方、下方的补充内容，可省略            |
+| `links`          | 可选的操作链接，每项填写 `label` 和 `href`  |
+
+分组底色会从标题颜色自动生成，不需要逐块调色。不填颜色时使用默认配色。文字内容支持行内 Markdown；链接指向当前文章时，会自动变成加粗的纯文本，避免点回自己。
+
+只在一篇文章里使用的模板，也可以直接写在文章属性中。完整示例见 [EXAMPLES.md](EXAMPLES.md)。
+
+## 底部的分类从哪里来？
+
+分类沿用 Quartz 原来的标签。文章开头这样写：
+
+```yaml
+---
+title: 示例文章
+tags:
+  - 知识
+  - 入门
+---
+```
+
+站点会把它显示成文章底部的「分类：知识｜入门」。没有标签时，分类栏也会隐藏。`wiki.clytam.net` 已经完成这部分接入，直接修改文章标签即可。
+
+## 在新站点中接入
+
+需要 Node.js 22 或更新版本，以及 npm 10.9.2 或更新版本。在插件仓库中构建安装包：
+
+```sh
+npm ci
+npm run check
+npm pack
+```
+
+然后进入 Quartz 站点目录安装，路径替换成实际生成的包：
+
+```sh
+npm install /absolute/path/quartz-skin-vector-0.1.16.tgz
+```
+
+本地安装包已包含构建结果。Git 来源安装则会通过 `prepare` 构建，无需把上游 Vector 仓库复制到站点中。
+
+接下来需要在站点布局中使用 `VectorSkin(options)` 返回的组件。它不是 Markdown 转换器，不要放进 `plugins.transformers`。
+
+| 返回的组件   | 放在哪里、做什么                             |
+| ------------ | -------------------------------------------- |
+| `header`     | 每页放一次，提供顶部栏，并加载皮肤样式和脚本 |
+| `toc`        | 目录面板，需要保留 Quartz 的目录数据转换器   |
+| `appearance` | 外观面板                                     |
+| `navigation` | 放在 `afterBody`，显示文章选择的导航模板     |
+| `revision`   | 放在页脚正文之前，显示 `dates.modified`      |
+| `footer`     | 放在站点页脚里，显示 Markdown 正文和链接列表 |
+
+也可以单独导入 `VectorHeader`、`VectorTOC`、`VectorAppearance`、`VectorNavigation`、`VectorRevision`、`VectorFooter`，并给它们传入同一份配置。
+
+接入时还要处理这些地方：
+
+- 保留 Quartz Search 组件和内容索引，并把 `VectorSearchIndex()` 加入 `config.plugins.emitters`，生成顶部候选使用的标题、描述索引。
+- 保留目录转换器；没有目录数据的页面会隐藏目录。
+- 将原生 TagList 移到 `afterBody` 最后，放进 `.qv-categories` 容器，并加上指向 `tags/` 的「分类：」入口。
+- 移除重复的站点标题、主题切换和阅读时长组件，避免同一功能出现两次。
+- 在布局适配器中安排目录、探索的按钮与侧栏容器。皮肤依赖标准 Quartz 页面结构，如 `#quartz-body`、`.center` 和 `.sidebar.left/right`。
+
+`wiki.clytam.net/quartz.ts` 是这套站点的实际接入位置。修改其布局前，建议先看 [ARCHITECTURE.md](ARCHITECTURE.md)。
+
+## 开发和检查
+
+```sh
+npm run check        # 类型、代码风格和单元测试
+npm run build        # 构建插件
+npx playwright install chromium # 首次运行浏览器测试前安装
+npm run test:browser # 检查布局与交互
+```
+
+浏览器测试会在系统临时目录的 `quartz-vector-preview/` 中留下预览和截图。它使用测试页面；安装到实际站点后，还需要在站点目录运行 `npx quartz build` 并查看页面。
+
+## 来源和许可证
+
+布局参考 MediaWiki 的 Vector 2022，并改写为 Quartz 使用的 Preact、SCSS 和浏览器脚本。项目以 **GPL-2.0-or-later** 发布，详见 [LICENSE](LICENSE)、[LICENSE.Vector](LICENSE.Vector) 和 [NOTICE](NOTICE)。原插件模板的 MIT 许可证保留在 [LICENSE.template](LICENSE.template)。
+
+这是独立移植项目，不代表 Wikimedia 或 Quartz 官方，也不附带 Wikipedia 标志。

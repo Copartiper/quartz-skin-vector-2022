@@ -11,6 +11,7 @@ import {
   VectorSkin,
   VectorRevision,
   VectorFooter,
+  VectorNavigation,
 } from "../src/components/VectorSkin";
 import { safeUrl } from "../src/vector-options";
 
@@ -132,4 +133,72 @@ describe("Vector skin server rendering", () => {
       expect(safeUrl(value)).toBe(value);
     },
   );
+});
+
+describe("navigation templates", () => {
+  it("selects shared templates and renders inline templates with safe root links", () => {
+    const output = html(
+      VectorNavigation({
+        navigationTemplates: [
+          { title: "Shared", rows: [{ label: "Group", content: "[Note](notes/one)" }] },
+        ],
+      }),
+      {
+        ...props,
+        fileData: {
+          ...props.fileData,
+          frontmatter: {
+            title: "Test",
+            tags: [],
+            navboxes: [
+              0,
+              {
+                title: "Inline",
+                collapsed: true,
+                rows: [{ label: "<unsafe>", content: "[bad](javascript:alert)" }],
+              },
+            ],
+          },
+        },
+      } as unknown as QuartzComponentProps,
+    );
+    expect(output).toContain('class="qv-navbox" open');
+    expect(output).toContain('href="../../notes/one"');
+    expect(output).toContain("Inline");
+    expect(output).not.toContain("<unsafe>");
+    expect(output).not.toContain('href="javascript:');
+  });
+  it("omits templates on pages without navboxes or invalid references", () => {
+    expect(html(VectorNavigation())).toBe("");
+    expect(
+      html(VectorNavigation(), {
+        ...props,
+        fileData: { ...props.fileData, frontmatter: { navboxes: [999, null, {}] } },
+      } as unknown as QuartzComponentProps),
+    ).toBe("");
+  });
+});
+
+it("renders self-links as text and accepts only safe per-template colors", () => {
+  const output = html(
+    VectorNavigation({
+      navigationTemplates: [
+        {
+          title: "[Current](notes/nested/page.html)",
+          color: { light: "#ffccaa", dark: "red;display:none" },
+          rows: [
+            { label: "Group", content: "[Same](notes/nested/page#index) · [Other](notes/other)" },
+          ],
+        },
+      ],
+    }),
+    {
+      ...props,
+      fileData: { ...props.fileData, frontmatter: { navboxes: [0] } },
+    } as unknown as QuartzComponentProps,
+  );
+  expect(output.match(/aria-current="page"/g)).toHaveLength(2);
+  expect(output).toContain("--qv-box-light:#ffccaa");
+  expect(output).not.toContain("display:none");
+  expect(output).toContain('href="../../notes/other"');
 });

@@ -5,5 +5,6 @@ export {
   VectorAppearance,
   VectorRevision,
   VectorFooter,
+  VectorNavigation,
 } from "./VectorSkin";
-export type { VectorSkinOptions } from "../types";
+export type { VectorSkinOptions, VectorNavigationTemplate } from "../types";

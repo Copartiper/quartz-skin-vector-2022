@@ -21,8 +21,9 @@ export {
   VectorAppearance,
   VectorRevision,
   VectorFooter,
+  VectorNavigation,
 } from "./components/VectorSkin";
 export { defaultOptions as vectorDefaultOptions } from "./vector-options";
-export type { VectorSkinOptions } from "./types";
+export type { VectorSkinOptions, VectorNavigationTemplate } from "./types";
 
 export { VectorSearchIndex } from "./search-index";

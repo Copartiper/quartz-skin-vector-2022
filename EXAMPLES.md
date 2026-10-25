@@ -1,132 +1,110 @@
-# Plugin Examples
+# 配置示例
 
-Minimal, annotated examples for each Quartz plugin type.
+下面的例子可以按需要复制。除文章示例外，全站设置都放在 `quartz.config.yaml` 的 `vectorSkin` 下；已经有这个区块时，合并里面的字段即可。
 
-## 1. Minimal Transformer
+## 两个模板，多篇文章共用
 
-Wraps an existing remark plugin to enforce hard line breaks.
+比如，网站里有一组入门文章和一组参考资料。先把两组链接写在配置里：
 
-```ts
-import remarkBreaks from "remark-breaks";
-import type { QuartzTransformerPlugin } from "@quartz-community/types";
+```yaml
+vectorSkin:
+  navigationTemplates:
+    # 第一个模板，编号是 0。
+    - title: 入门指南
+      collapsed: false
+      color:
+        light: "#c5d8ef"
+        dark: "#293e57"
+      rows:
+        - label: 开始使用
+          content: "[简介](about) · [安装](guide/install) · [常见问题](faq)"
+      below: "[回到首页](index)"
 
-export const HardLineBreaks: QuartzTransformerPlugin<void> = () => ({
-  name: "HardLineBreaks",
-  markdownPlugins() {
-    // Return a list of unified/remark plugins
-    return [remarkBreaks];
-  },
-});
+    # 第二个模板，编号是 1。
+    - title: 参考资料
+      collapsed: true
+      color:
+        light: "#ddc5e4"
+        dark: "#4a3052"
+      rows:
+        - label: 文档
+          content: "[配置说明](reference/config) · [术语表](reference/glossary)"
 ```
 
-## 2. Minimal Filter
+然后在文章开头引用：
 
-Excludes pages marked as `draft: true` in frontmatter.
+```markdown
+---
+title: 安装
+navboxes: [0, 1]
+tags:
+  - 指南
+---
 
-```ts
-import type { QuartzFilterPlugin } from "@quartz-community/types";
-
-export const RemoveDrafts: QuartzFilterPlugin<void> = () => ({
-  name: "RemoveDrafts",
-  shouldPublish(_ctx, [_tree, vfile]) {
-    // Access frontmatter from vfile data
-    const draft = vfile.data?.frontmatter?.draft;
-    // Return false to exclude the page from the build
-    return draft !== true;
-  },
-});
+这里开始写正文。
 ```
 
-## 3. Minimal Emitter
+这篇文章底部会先显示展开的「入门指南」，再显示收起的「参考资料」，最后是「分类：指南」。如果「安装」链接指向当前页，它会显示成加粗文字。
 
-Writes a `CNAME` file to the output directory.
+这些地址只是示例，记得换成自己站点里已有的文章路径。调整模板顺序后，文章里的编号也要一起检查。
 
-```ts
-import fs from "node:fs/promises";
-import path from "node:path";
-import type { QuartzEmitterPlugin } from "@quartz-community/types";
+## 只给一篇文章写模板
 
-export const CNAME: QuartzEmitterPlugin<{ domain: string }> = (opts) => ({
-  name: "CNAME",
-  async emit(ctx, _content, _resources) {
-    // ctx.argv.output is the destination directory
-    const filePath = path.join(ctx.argv.output, "CNAME");
-    await fs.writeFile(filePath, opts.domain);
-    // Return the list of emitted file paths
-    return [filePath as any];
-  },
-});
+不想动全站配置时，可以直接把模板放进文章开头：
+
+```markdown
+---
+title: 阅读计划
+navboxes:
+  - title: 我的阅读清单
+    collapsed: false
+    color:
+      light: "#d5e8d4"
+      dark: "#29452e"
+    above: "从这里开始，按自己的节奏阅读。"
+    rows:
+      - label: 基础
+        content: "[第一篇](reading/one) · [第二篇](reading/two)"
+      - label: 进阶
+        content: "[第三篇](reading/three) · **待补充**"
+    below: "[全部阅读笔记](reading/)"
+---
+
+这里开始写正文。
 ```
 
-## 4. Minimal Component
+全站模板编号和文章内的模板也可以混用：在 `navboxes` 列表里先写 `- 0`，再写 `- title: ...` 即可。
 
-Renders a simple spacer div with custom CSS.
+## 给模板加操作链接
 
-```tsx
-import type { QuartzComponent, QuartzComponentConstructor } from "@quartz-community/types";
+如果有真正的模板说明页或编辑地址，可以加入 `links`：
 
-export default ((opts?: { height?: string }) => {
-  const Component: QuartzComponent = () => {
-    return <div class="spacer" style={{ height: opts?.height ?? "1rem" }} />;
-  };
-
-  // Attach CSS string to the component
-  Component.css = ".spacer { width: 100%; }";
-  return Component;
-}) satisfies QuartzComponentConstructor;
+```yaml
+links:
+  - label: 查看说明
+    href: templates/reading
+  - label: 编辑
+    href: https://example.org/edit-template
 ```
 
-## 5. Minimal Page Type
+把它放在模板的 `title`、`rows` 同一层。没配置就不显示，也不会生成没有目标的「查、论、编」链接。
 
-Generates a virtual "About" page if it doesn't exist.
+## 改页脚文字
 
-```ts
-import type { QuartzPageTypePlugin } from "@quartz-community/types";
+`|` 后面缩进的内容就是 Markdown 正文。空一行表示新段落：
 
-export const AboutPage: QuartzPageTypePlugin<void> = () => ({
-  name: "AboutPage",
-  // Match the slug to handle
-  match: (slug) => slug === "about",
-  // Generate the page content
-  generate: async (_ctx, _content) => ({
-    slug: "about" as any,
-    frontmatter: { title: "About" },
-    content: "This is a virtual about page.",
-  }),
-});
+```yaml
+vectorSkin:
+  footerMarkdown: |
+    欢迎使用我的知识库。
+
+    本站内容按 **[许可协议](https://example.org/license)** 提供。
+    有问题可以[联系我](contact)。
+  footerLinks:
+    - label: 关于
+      href: about
+    - label: 使用条款
+      href: usage
 ```
 
-## 6. Minimal Bases View Registration
-
-Registers a custom view for the `@quartz-community/bases-page` system.
-
-```ts
-import { viewRegistry } from "@quartz-community/bases-page";
-
-export function init() {
-  // Register a view that can be used in bases-page layouts
-  viewRegistry.register("my-custom-view", (props) => {
-    return <div>Custom View for {props.fileData.slug}</div>;
-  });
-}
-```
-
-## 7. Minimal i18n Setup
-
-Per-plugin translations with a fallback mechanism.
-
-```ts
-// src/i18n/locales/en-US.ts
-export default {
-  hello: "Hello",
-};
-
-// src/i18n/index.ts
-import enUS from "./locales/en-US";
-const locales = { "en-US": enUS };
-
-export function i18n(locale: string) {
-  // Fallback to en-US if locale is not found
-  return locales[locale as keyof typeof locales] || enUS;
-}
-```
+页脚支持 Markdown 的链接和加粗。直接写 HTML 标签会显示为文字，不会执行。

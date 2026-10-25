@@ -386,7 +386,10 @@ function initVector() {
       full.setAttribute("role", "option");
       full.id = `qv-suggestion-${popup.children.length}`;
       full.setAttribute("aria-selected", "false");
-      full.textContent = header.dataset.qvFullSearch!.replace("{query}", query);
+      const [before, after = ""] = header.dataset.qvFullSearch!.split("{query}");
+      const term = document.createElement("strong");
+      term.textContent = query;
+      full.append(before!, term, after);
       popup.append(full);
       popup.hidden = false;
       input.setAttribute("aria-expanded", "true");
