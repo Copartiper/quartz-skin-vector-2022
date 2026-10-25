@@ -1,6 +1,13 @@
 export default {
   components: { example: { title: "Example" } },
   vector: {
+    expand: "Expand",
+    collapse: "Collapse",
+    navigationTemplates: "Navigation templates",
+    moved: "{menu} menu moved here",
+    pageNavigation: "Page navigation",
+    explore: "Explore",
+    graph: "Graph",
     moveToSidebar: "Move to sidebar",
     hide: "Hide",
     categories: "Contents by category",

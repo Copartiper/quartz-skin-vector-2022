@@ -1,10 +1,10 @@
 {
   "name": "quartz-skin-vector",
-  "version": "0.1.16",
+  "version": "0.2.0",
   "description": "Vector 2022 skin components for Quartz",
   "type": "module",
   "license": "GPL-2.0-or-later",
-  "homepage": "https://quartz.jzhao.xyz",
+  "homepage": "https://github.com/Copartiper/quartz-skin-vector-2022",
   "keywords": [
     "quartz",
     "quartz-plugin",
@@ -26,7 +26,9 @@
     "tsconfig.json",
     "tsconfig.build.json",
     "test",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "EXAMPLES.md",
+    "ARCHITECTURE.md"
   ],
   "exports": {
     ".": {
@@ -57,7 +59,8 @@
     "release": "npm run build && changeset publish",
     "prepublishOnly": "npm run build",
     "prepare": "npm run build",
-    "test:browser": "npm run build && node test/browser.mjs"
+    "test:browser": "npm run build && node test/browser.mjs",
+    "test:install": "node test/installation.mjs"
   },
   "peerDependencies": {
     "preact": "^10.0.0",
@@ -111,7 +114,7 @@
       "component",
       "emitter"
     ],
-    "version": "0.1.16",
+    "version": "0.2.0",
     "quartzVersion": ">=5.0.0",
     "dependencies": [],
     "defaultOrder": 50,
@@ -125,7 +128,6 @@
       "defaultTextSize": "standard",
       "defaultWidth": "standard",
       "showAppearance": true,
-      "navigation": [],
       "logoUrl": "",
       "logoAlt": "",
       "revisionTimeZone": "Asia/Shanghai"
@@ -274,23 +276,68 @@
             "rows"
           ]
         }
+      },
+      "footerMarkdown": {
+        "type": "string"
+      },
+      "footerTextColors": {
+        "type": "object",
+        "properties": {
+          "light": {
+            "type": "string"
+          },
+          "dark": {
+            "type": "string"
+          }
+        }
+      },
+      "footerLinks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "href": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "label",
+            "href"
+          ]
+        }
+      },
+      "footerParagraphs": {
+        "type": "array",
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "href": {
+                "type": "string"
+              },
+              "bold": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "text"
+            ]
+          }
+        }
       }
     },
     "components": {
-      "VectorHeader": {
-        "displayName": "Vector header",
+      "VectorPage": {
+        "displayName": "Vector 2022 page",
         "defaultPosition": "beforeBody",
         "defaultPriority": 0
-      },
-      "VectorTOC": {
-        "displayName": "Vector contents",
-        "defaultPosition": "left",
-        "defaultPriority": 10
-      },
-      "VectorAppearance": {
-        "displayName": "Vector appearance",
-        "defaultPosition": "right",
-        "defaultPriority": 10
       }
     }
   },
@@ -300,5 +347,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Copartiper/quartz-skin-vector-2022.git"
   }
 }

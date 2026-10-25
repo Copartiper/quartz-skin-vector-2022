@@ -1,3 +1,4 @@
+import { prepareAutoLayout } from "./auto-layout";
 import {
   prepareSuggestions,
   suggestPreparedPages,
@@ -13,6 +14,7 @@ const qvAllowed: Record<string, readonly string[]> = {
 let qvDispose: (() => void) | undefined;
 function initVector() {
   qvDispose?.();
+  prepareAutoLayout();
   const header = document.querySelector<HTMLElement>("[data-qv-skin]");
   if (!header) {
     for (const key of Object.keys(qvAllowed))
@@ -70,12 +72,15 @@ function initVector() {
   media.addEventListener("change", onSystemTheme);
   cleanup.push(() => media.removeEventListener("change", onSystemTheme));
 
+  const movedTemplate = header.dataset.qvMoved ?? "{menu}已移至此处";
   function movedNotice(host: HTMLElement, label: string) {
     document.querySelector(".qv-moved-notice")?.remove();
     const notice = document.createElement("div");
     notice.className = "qv-moved-notice";
     notice.role = "status";
-    notice.textContent = `${label.endsWith("菜单") ? label : label + "菜单"}已移至此处`;
+    const menuLabel =
+      movedTemplate.includes(" menu ") || label.endsWith("菜单") ? label : label + "菜单";
+    notice.textContent = movedTemplate.replace("{menu}", menuLabel);
     document.body.append(notice);
     const rect = host.getBoundingClientRect();
     notice.style.top = `${Math.max(8, rect.bottom + 8)}px`;

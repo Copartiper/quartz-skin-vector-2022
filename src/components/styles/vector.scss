@@ -1253,3 +1253,35 @@ body:has([data-qv-skin]) {
 :root:has([data-qv-skin]) :is(.popover, .search-container) .qv-header {
   display: none !important;
 }
+
+:root:has([data-qv-auto-layout]) {
+  & [data-qv-superseded],
+  & [data-qv-native-tool][hidden] {
+    display: none !important;
+  }
+  & .qv-auto-layout {
+    display: contents;
+  }
+  & [data-qv-auto-appearance] {
+    width: 100%;
+  }
+  & .qv-auto-active > .sidebar.left > :not(.qv-main-menu-pinned):not([data-qv-panel]) {
+    display: none;
+  }
+}
+
+:root:has([data-qv-auto-layout]) {
+  & :is(.popover, .search-container) [data-qv-auto-layout] {
+    display: none !important;
+  }
+  &
+    .page-header
+    .popover-hint
+    > :is(.breadcrumb-container, .breadcrumbs, .content-meta, .note-properties, .tags),
+  &
+    :is(.popover, .search-container)
+    .popover-hint
+    > :is(.breadcrumb-container, .breadcrumbs, .content-meta, .note-properties, .tags) {
+    display: none !important;
+  }
+}

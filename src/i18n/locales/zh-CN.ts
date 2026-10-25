@@ -1,6 +1,13 @@
 export default {
   components: { example: { title: "示例" } },
   vector: {
+    expand: "展开",
+    collapse: "折叠",
+    navigationTemplates: "导航模板",
+    moved: "{menu}已移至此处",
+    pageNavigation: "页面导航",
+    explore: "探索",
+    graph: "知识图谱",
     moveToSidebar: "移至侧栏",
     hide: "隐藏",
     categories: "分类索引",

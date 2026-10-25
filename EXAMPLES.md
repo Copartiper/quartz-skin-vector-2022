@@ -1,34 +1,37 @@
 # 配置示例
 
-下面的例子可以按需要复制。除文章示例外，全站设置都放在 `quartz.config.yaml` 的 `vectorSkin` 下；已经有这个区块时，合并里面的字段即可。
+下面的例子可以按需要复制。除文章示例外，全站设置都放在 `quartz.config.yaml` 中本插件的 `options` 下；插件条目已经存在时，合并里面的字段即可，保留其他插件。
 
 ## 两个模板，多篇文章共用
 
 比如，网站里有一组入门文章和一组参考资料。先把两组链接写在配置里：
 
 ```yaml
-vectorSkin:
-  navigationTemplates:
-    # 第一个模板，编号是 0。
-    - title: 入门指南
-      collapsed: false
-      color:
-        light: "#c5d8ef"
-        dark: "#293e57"
-      rows:
-        - label: 开始使用
-          content: "[简介](about) · [安装](guide/install) · [常见问题](faq)"
-      below: "[回到首页](index)"
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      navigationTemplates:
+        # 第一个模板，编号是 0。
+        - title: 入门指南
+          collapsed: false
+          color:
+            light: "#c5d8ef"
+            dark: "#293e57"
+          rows:
+            - label: 开始使用
+              content: "[简介](about) · [安装](guide/install) · [常见问题](faq)"
+          below: "[回到首页](index)"
 
-    # 第二个模板，编号是 1。
-    - title: 参考资料
-      collapsed: true
-      color:
-        light: "#ddc5e4"
-        dark: "#4a3052"
-      rows:
-        - label: 文档
-          content: "[配置说明](reference/config) · [术语表](reference/glossary)"
+        # 第二个模板，编号是 1。
+        - title: 参考资料
+          collapsed: true
+          color:
+            light: "#ddc5e4"
+            dark: "#4a3052"
+          rows:
+            - label: 文档
+              content: "[配置说明](reference/config) · [术语表](reference/glossary)"
 ```
 
 然后在文章开头引用：
@@ -94,17 +97,20 @@ links:
 `|` 后面缩进的内容就是 Markdown 正文。空一行表示新段落：
 
 ```yaml
-vectorSkin:
-  footerMarkdown: |
-    欢迎使用我的知识库。
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      footerMarkdown: |
+        欢迎使用我的知识库。
 
-    本站内容按 **[许可协议](https://example.org/license)** 提供。
-    有问题可以[联系我](contact)。
-  footerLinks:
-    - label: 关于
-      href: about
-    - label: 使用条款
-      href: usage
+        本站内容按 **[许可协议](https://example.org/license)** 提供。
+        有问题可以[联系我](contact)。
+      footerLinks:
+        - label: 关于
+          href: about
+        - label: 使用条款
+          href: usage
 ```
 
 页脚支持 Markdown 的链接和加粗。直接写 HTML 标签会显示为文字，不会执行。

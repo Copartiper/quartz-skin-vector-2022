@@ -230,3 +230,34 @@ it("keeps cached Markdown links specific to each page", () => {
   expect(other).toContain('href="./notes/nested/page"');
   expect(html(navigation, data("notes/nested/page"))).toContain('href="../../notes/other"');
 });
+
+describe("automatic plugin component", () => {
+  it("renders a complete generic shell with safe defaults and preserves host footer", async () => {
+    const { VectorPage } = await import("../src/components/VectorPage");
+    const output = html(VectorPage(), {
+      ...props,
+      cfg: { pageTitle: "A different garden", locale: "en-US" },
+      fileData: { ...props.fileData, frontmatter: { title: "An article", tags: ["guide/test"] } },
+    } as unknown as QuartzComponentProps);
+    expect(output).toContain("data-qv-auto-layout");
+    expect(output).toContain('placeholder="Search A different garden"');
+    expect(output).toContain('data-qv-replace-footer="false"');
+    expect(output).toContain('href="../../tags/guide/test"');
+    expect(output).toContain("Explore");
+    expect(output).not.toContain("wiki.clytam.net");
+  });
+  it("opts into footer replacement only when footer content is configured", async () => {
+    const { VectorPage } = await import("../src/components/VectorPage");
+    const output = html(VectorPage({ footerMarkdown: "**Custom** footer" }));
+    expect(output).toContain('data-qv-replace-footer="true"');
+    expect(output).toContain("<strong>Custom</strong> footer");
+  });
+  it("formats revision text for an English site", () => {
+    const output = html(VectorRevision({ locale: "en-US" }), {
+      ...props,
+      fileData: { ...props.fileData, dates: { modified: new Date("2026-07-29T01:42:00Z") } },
+    } as unknown as QuartzComponentProps);
+    expect(output).toContain("This page was last edited on ");
+    expect(output).not.toContain("本页面");
+  });
+});

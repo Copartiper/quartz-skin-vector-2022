@@ -26,6 +26,7 @@ export const VectorHeader = ((options?: VectorSkinOptions) => {
       : `${pathToRoot(props.fileData.slug ?? ("index" as FullSlug))}/`;
     const base = `${pathToRoot(props.fileData.slug ?? ("index" as FullSlug))}/`;
     const siteName = opts.wordmark || props.cfg.pageTitle || "Quartz";
+    const searchLabel = `${t.search}${t.search === "Search" ? " " : ""}${siteName}`;
     const localUrl = (url: string) => {
       const value = safeUrl(url);
       return /^(?:https?:|\/|#|\.{1,2}\/)/i.test(value) ? value : `${base}${value}`;
@@ -52,6 +53,7 @@ export const VectorHeader = ((options?: VectorSkinOptions) => {
         data-width={opts.defaultWidth}
         data-qv-root={base}
         data-qv-full-search={t.fullSearch}
+        data-qv-moved={t.moved}
       >
         <a class="qv-skip" href="#qv-content">
           {t.skip}
@@ -138,8 +140,8 @@ export const VectorHeader = ((options?: VectorSkinOptions) => {
               autocomplete="off"
               type="search"
               name="query"
-              aria-label={`${t.search}${siteName}`}
-              placeholder={`${t.search}${siteName}`}
+              aria-label={searchLabel}
+              placeholder={searchLabel}
             />
           </label>
           <button type="submit">{t.search}</button>
@@ -270,7 +272,10 @@ export const VectorRevision = ((options?: VectorSkinOptions) => {
     if (!date) return null;
     const parsed = new Date(date);
     if (Number.isNaN(parsed.getTime())) return null;
-    formatter ??= new Intl.DateTimeFormat("zh-CN", {
+    const chinese = (opts.locale === "auto" ? (props.cfg.locale ?? "en-US") : opts.locale)
+      .toLowerCase()
+      .startsWith("zh");
+    formatter ??= new Intl.DateTimeFormat(chinese ? "zh-CN" : "en-US", {
       timeZone: opts.revisionTimeZone,
       year: "numeric",
       month: "numeric",
@@ -285,11 +290,13 @@ export const VectorRevision = ((options?: VectorSkinOptions) => {
       parts.find((part) => part.type === type)?.value;
     return (
       <p class="qv-revision">
-        本页面最后修订于
-        <time
-          dateTime={parsed.toISOString()}
-        >{`${value("year")}年${value("month")}月${value("day")}日 (${value("weekday")}) ${value("hour")}:${value("minute")}`}</time>
-        。
+        {chinese ? "本页面最后修订于" : "This page was last edited on "}
+        <time dateTime={parsed.toISOString()}>
+          {chinese
+            ? `${value("year")}年${value("month")}月${value("day")}日 (${value("weekday")}) ${value("hour")}:${value("minute")}`
+            : formatter.format(parsed)}
+        </time>
+        {chinese ? "。" : "."}
       </p>
     );
   };
@@ -355,6 +362,7 @@ export const VectorNavigation = ((options?: VectorSkinOptions) => {
   const lexer = new Marked();
   const inlineTokens = new Map<string, ReturnType<typeof lexer.Lexer.lexInline>>();
   const Navigation: QuartzComponent = (props) => {
+    const t = labels(props, options?.locale ?? "auto");
     const configured = options?.navigationTemplates ?? [];
     const selected = props.fileData.frontmatter?.navboxes;
     if (!Array.isArray(selected) || !selected.length) return null;
@@ -429,14 +437,14 @@ export const VectorNavigation = ((options?: VectorSkinOptions) => {
       );
     if (!templates.length) return null;
     return (
-      <nav class="qv-navboxes" aria-label="导航模板">
+      <nav class="qv-navboxes" aria-label={t.navigationTemplates}>
         {templates.map((template) => (
           <details class="qv-navbox" open={!template.collapsed} style={colors(template)}>
             <summary>
               <strong dangerouslySetInnerHTML={text(template.title)} />
               <span class="qv-navbox-toggle" aria-hidden="true">
-                <span class="qv-navbox-expand">[展开]</span>
-                <span class="qv-navbox-collapse">[折叠]</span>
+                <span class="qv-navbox-expand">[{t.expand}]</span>
+                <span class="qv-navbox-collapse">[{t.collapse}]</span>
               </span>
             </summary>
             <div class="qv-navbox-body">

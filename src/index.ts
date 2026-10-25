@@ -27,3 +27,7 @@ export { defaultOptions as vectorDefaultOptions } from "./vector-options";
 export type { VectorSkinOptions, VectorNavigationTemplate } from "./types";
 
 export { VectorSearchIndex } from "./search-index";
+
+export { VectorPage } from "./components/VectorPage";
+// The loader uses the default factory for the emitter category.
+export { VectorSearchIndex as default } from "./search-index";

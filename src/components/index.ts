@@ -8,3 +8,5 @@ export {
   VectorNavigation,
 } from "./VectorSkin";
 export type { VectorSkinOptions, VectorNavigationTemplate } from "../types";
+
+export { VectorPage } from "./VectorPage";

@@ -4,36 +4,56 @@
 
 皮肤适用于 Quartz 5 社区插件系统。中文、英文界面都可以使用，手机上也能阅读。它主要负责页面外观；账户、在线编辑、页面历史等 MediaWiki 后台功能，需要另外实现。
 
-## 已经装好了，想改点东西？
+## 一行安装
 
-如果你正在维护 `wiki.clytam.net`，通常只需要改两个地方：
+需要 Node.js 22 或更新版本、npm 10.9.2 或更新版本。在支持社区插件的 Quartz 5 站点根目录运行：
 
-- **改全站设置**：打开 `quartz.config.yaml`，找到 `vectorSkin`。
-- **改某篇文章**：打开对应的 Markdown 文件，修改开头两条 `---` 之间的属性，或下面的正文。
+```sh
+npx quartz plugin add github:Copartiper/quartz-skin-vector-2022
+```
 
-改好后，在站点目录运行 `npx quartz build`。如果已经开着 `npx quartz build --serve`，保存后会自动重新构建。
+命令会下载、构建插件，并在 `quartz.config.yaml` 中添加启用记录。再运行 `npx quartz build --serve`，就可以预览。无需复制布局文件，也不用修改 `quartz.ts`。
 
-`vectorSkin` 是站点的布局适配器读取的配置。新站点需要先接入适配器，单独往 YAML 里加这一段还不会生效。首次安装请看后面的「在新站点中接入」。
+插件面向标准 Quartz 5 页面布局；如果使用的是没有 `quartz plugin` 命令的旧版 Quartz，需要先升级。完全重写页面结构的自定义主题，需要另行接入组件。
+
+安装后，找到配置中这个插件的条目，把设置写在它的 `options` 下面：
+
+```yaml
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      tagline: 记录、连接、分享
+```
+
+保留站点原有的其他插件条目，只修改这一项。下面的例子都采用相同写法，不要重复添加插件。
+
+默认主菜单只提供首页和分类索引，你可以按需添加站点自己的栏目。皮肤会复用站点已有的搜索、探索和图谱；缺少某个组件时，对应入口会隐藏。阅读时长、路径导航、原生主题按钮和 Properties 栏会在皮肤布局中隐藏，分类移到正文底部，其他侧栏组件移到正文下方。没有配置新页脚时，会保留原来的页脚内容。
+
+这些调整在页面加载时完成，需要启用 JavaScript。插件不会改写其他插件的开关，也不会修改文章；将它的 `enabled` 改为 `false` 并重新构建，就能恢复原布局。
 
 ## 换站名、标志和主菜单
 
-下面这些设置都放在 `quartz.config.yaml` 的 `vectorSkin` 下。已有这个区块时，请修改里面的内容，不要再新建一个同名区块。
+下面这些设置都写在 `quartz.config.yaml` 中本插件的 `options` 下。安装时已经生成条目，找到它修改即可。
 
 ```yaml
-vectorSkin:
-  locale: zh-CN
-  wordmark: 我的知识库
-  tagline: 记录、连接、分享
-  logoUrl: static/icon.png
-  logoAlt: 我的知识库标志
-  navigation:
-    - label: 首页
-      href: index
-    - label: 分类索引
-      href: tags/
-    - section: 参与
-      label: 关于本站
-      href: about
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      locale: zh-CN
+      wordmark: 我的知识库
+      tagline: 记录、连接、分享
+      logoUrl: static/icon.png
+      logoAlt: 我的知识库标志
+      navigation:
+        - label: 首页
+          href: index
+        - label: 分类索引
+          href: tags/
+        - section: 参与
+          label: 关于本站
+          href: about
 ```
 
 `wordmark` 是顶部站名；不填就使用 Quartz 的 `pageTitle`。`tagline` 是下面的小字。`logoUrl` 是标志图片的路径，留空就不显示图片。
@@ -51,11 +71,14 @@ vectorSkin:
 你可以设置访客第一次打开网站时的阅读外观：
 
 ```yaml
-vectorSkin:
-  defaultTheme: auto # auto 跟随系统，也可以填 light 或 dark
-  defaultTextSize: standard # small、standard 或 large
-  defaultWidth: standard # standard 或 wide
-  showAppearance: true
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      defaultTheme: auto # auto 跟随系统，也可以填 light 或 dark
+      defaultTextSize: standard # small、standard 或 large
+      defaultWidth: standard # standard 或 wide
+      showAppearance: true
 ```
 
 浏览器会记住访客自己的选择，之后优先使用这些选择。因此，改了默认设置却没看到变化时，可以先检查浏览器里是否已经选过其他设置。
@@ -67,20 +90,23 @@ vectorSkin:
 页脚正文用 Markdown 写，和平时写文章差不多。链接列表单独放在 `footerLinks` 中：
 
 ```yaml
-vectorSkin:
-  revisionTimeZone: Asia/Shanghai
-  footerMarkdown: |
-    本站文字按 **[许可协议](https://example.org/license)** 提供。
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      revisionTimeZone: Asia/Shanghai
+      footerMarkdown: |
+        本站文字按 **[许可协议](https://example.org/license)** 提供。
 
-    继续使用本站前，请阅读[使用条款](usage)。
-  footerLinks:
-    - label: 关于本站
-      href: about
-    - label: 联系方式
-      href: contact
+        继续使用本站前，请阅读[使用条款](usage)。
+      footerLinks:
+        - label: 关于本站
+          href: about
+        - label: 联系方式
+          href: contact
 ```
 
-正文颜色和链接颜色默认跟随文章配色，页脚没有单独的纯色背景。修订时间显示在页脚正文上方。`wiki.clytam.net` 使用文章最近一次 Git 提交的时间；文章尚未提交时，使用本地文件修改时间，不会把故事里的年代当成修订日期。
+正文颜色和链接颜色默认跟随文章配色，页脚没有单独的纯色背景。修订时间显示在页脚正文上方，使用文章最近一次 Git 提交的时间；文章尚未提交时，使用本地文件修改时间。
 
 需要单独指定页脚文字颜色时，可以加上：
 
@@ -94,35 +120,39 @@ footerTextColors:
 
 ## 给文章加导航模板
 
-导航模板就是文章底部那块分组链接。比如「克莱拓姆协约」模板，可以把地理、组织、历史的相关文章放在一起。
+导航模板就是文章底部那块分组链接。比如「入门指南」模板，可以把简介、安装说明、常见问题放在一起。
 
 最常用的方式是：**全站写一份模板，多篇文章一起引用。**
 
-先在 `vectorSkin` 下写模板：
+先在插件的 `options` 下写模板：
 
 ```yaml
-vectorSkin:
-  navigationTemplates:
-    - title: "[我的知识库](index)"
-      collapsed: false
-      color:
-        light: "#c5d8ef"
-        dark: "#293e57"
-      rows:
-        - label: 入门
-          content: "[简介](about) · [使用方法](guide)"
-        - label: 相关页面
-          content: "[常见问题](faq) · [联系方式](contact)"
-      below: "[分类索引](tags/)"
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      navigationTemplates:
+        - title: "[我的知识库](index)"
+          collapsed: false
+          color:
+            light: "#c5d8ef"
+            dark: "#293e57"
+          rows:
+            - label: 入门
+              content: "[简介](about) · [使用方法](guide)"
+            - label: 相关页面
+              content: "[常见问题](faq) · [联系方式](contact)"
+          below: "[分类索引](tags/)"
 ```
 
 再到要显示它的文章里，加上 `navboxes`：
 
-```yaml
+```markdown
 ---
 title: 使用方法
 navboxes: [0]
 ---
+
 这里是文章正文。
 ```
 
@@ -157,48 +187,36 @@ tags:
 ---
 ```
 
-站点会把它显示成文章底部的「分类：知识｜入门」。没有标签时，分类栏也会隐藏。`wiki.clytam.net` 已经完成这部分接入，直接修改文章标签即可。
+站点会把它显示成文章底部的「分类：知识｜入门」。没有标签时，分类栏也会隐藏。
 
-## 在新站点中接入
+## 更新、禁用和迁移
 
-需要 Node.js 22 或更新版本，以及 npm 10.9.2 或更新版本。在插件仓库中构建安装包：
-
-```sh
-npm ci
-npm run check
-npm pack
-```
-
-然后进入 Quartz 站点目录安装，路径替换成实际生成的包：
+更新到 GitHub 上的新版本：
 
 ```sh
-npm install /absolute/path/quartz-skin-vector-0.1.16.tgz
+npx quartz plugin update quartz-skin-vector-2022
 ```
 
-本地安装包已包含构建结果。Git 来源安装则会通过 `prepare` 构建，无需把上游 Vector 仓库复制到站点中。
+更新后重新构建网站。建议先保存自己的配置和文章修改，再更新插件。
 
-接下来需要在站点布局中使用 `VectorSkin(options)` 返回的组件。它不是 Markdown 转换器，不要放进 `plugins.transformers`。
+暂时不用皮肤时，把插件条目的 `enabled` 改成 `false`，然后重新构建即可。配置和文章里的导航模板定义都可以保留，之后再启用时继续使用。
 
-| 返回的组件   | 放在哪里、做什么                             |
-| ------------ | -------------------------------------------- |
-| `header`     | 每页放一次，提供顶部栏，并加载皮肤样式和脚本 |
-| `toc`        | 目录面板，需要保留 Quartz 的目录数据转换器   |
-| `appearance` | 外观面板                                     |
-| `navigation` | 放在 `afterBody`，显示文章选择的导航模板     |
-| `revision`   | 放在页脚正文之前，显示 `dates.modified`      |
-| `footer`     | 放在站点页脚里，显示 Markdown 正文和链接列表 |
+如果你以前手动接入过这个插件，需要先移除 `quartz.ts` 或布局文件里重复插入的 Vector 组件及搜索索引，再使用自动接入版。把旧 `vectorSkin` 区块里的设置移到插件条目的 `options` 下；新版不会自动读取旧区块，也不会覆盖你的布局文件。
 
-也可以单独导入 `VectorHeader`、`VectorTOC`、`VectorAppearance`、`VectorNavigation`、`VectorRevision`、`VectorFooter`，并给它们传入同一份配置。
+## 想自己安排布局？
 
-接入时还要处理这些地方：
+自动接入使用 `VectorPage`，它会把整套皮肤放进标准 Quartz 页面。想自行控制每一块的位置，也可以继续使用 `VectorSkin(options)` 创建组件：
 
-- 保留 Quartz Search 组件和内容索引，并把 `VectorSearchIndex()` 加入 `config.plugins.emitters`，生成顶部候选使用的标题、描述索引。
-- 保留目录转换器；没有目录数据的页面会隐藏目录。
-- 将原生 TagList 移到 `afterBody` 最后，放进 `.qv-categories` 容器，并加上指向 `tags/` 的「分类：」入口。
-- 移除重复的站点标题、主题切换和阅读时长组件，避免同一功能出现两次。
-- 在布局适配器中安排目录、探索的按钮与侧栏容器。皮肤依赖标准 Quartz 页面结构，如 `#quartz-body`、`.center` 和 `.sidebar.left/right`。
+| 返回的组件   | 用途                                       |
+| ------------ | ------------------------------------------ |
+| `header`     | 顶部栏，同时加载样式和浏览器脚本，每页一次 |
+| `toc`        | 文章目录，需要 Quartz 提供目录数据         |
+| `appearance` | 外观面板                                   |
+| `navigation` | 正文底部的导航模板                         |
+| `revision`   | 读取 `dates.modified`，显示修订时间        |
+| `footer`     | Markdown 页脚和链接列表                    |
 
-`wiki.clytam.net/quartz.ts` 是这套站点的实际接入位置。修改其布局前，建议先看 [ARCHITECTURE.md](ARCHITECTURE.md)。
+这些组件也可以单独导入。手动接入时，还需要自行安排搜索、分类栏等布局，并将 `VectorSearchIndex()` 加入发射器列表。不要同时加载手动组件和自动接入的 `VectorPage`。代码位置和开发方式见 [ARCHITECTURE.md](ARCHITECTURE.md)。
 
 ## 开发和检查
 
@@ -207,9 +225,11 @@ npm run check        # 类型、代码风格和单元测试
 npm run build        # 构建插件
 npx playwright install chromium # 首次运行浏览器测试前安装
 npm run test:browser # 检查布局与交互
+# 用本机已安装依赖的 Quartz 5 验证原生安装、配置、页面切换和禁用：
+QUARTZ_HOST=/path/to/quartz npm run test:install
 ```
 
-浏览器测试会在系统临时目录的 `quartz-vector-preview/` 中留下预览和截图。它使用测试页面；安装到实际站点后，还需要在站点目录运行 `npx quartz build` 并查看页面。
+浏览器测试会在系统临时目录的 `quartz-vector-preview/` 中留下预览和截图。安装测试另外创建独立站点，并复制插件源码供安装器构建，不会修改所提供的 Quartz 站点。安装到自己的站点后，仍建议构建并查看页面。
 
 ## 来源和许可证
 

@@ -6,6 +6,8 @@
 
 | 想改什么                                | 从哪里开始                                                |
 | --------------------------------------- | --------------------------------------------------------- |
+| 自动接入组件、修订时间和底部分类        | `src/components/VectorPage.tsx`                           |
+| 原生组件搬移与自动布局                  | `src/components/scripts/auto-layout.ts`                   |
 | 页头、目录、外观、页脚、导航模板的 HTML | `src/components/VectorSkin.tsx`                           |
 | 颜色、字号、间距、响应式布局            | `src/components/styles/vector.scss`                       |
 | 菜单固定、悬浮目录、搜索候选等交互      | `src/components/scripts/vector.inline.ts`                 |
@@ -23,7 +25,11 @@
 
 `VectorSkin(options)` 会创建一组使用相同设置的组件。`header` 附带整套皮肤样式和浏览器脚本，因此每页需要加载一次。导航模板从文章属性 `navboxes` 读取选择，再从配置 `navigationTemplates` 找到对应模板。
 
-在 `wiki.clytam.net` 中，`quartz.ts` 负责读取 YAML、安排菜单和侧栏、替换原生页脚，并把导航模板和分类栏放在正文之后。Git 修订时间也在这里计算。`quartz.config.yaml` 负责开关组件、设置站点文字和定义共享模板。
+原生安装通过 `package.json` 声明两个部分：一个注册为 `beforeBody` 的 `VectorPage` 组件，以及默认导出的 `VectorSearchIndex` 发射器。Quartz 加载它们时，把插件条目的 `options` 传给组件。新站点不需要修改入口文件，也不需要导入宿主私有模块。
+
+`VectorPage` 渲染皮肤面板、模板、分类和修订时间。浏览器初始化时，`prepareAutoLayout()` 复用原生搜索、探索和图谱的 DOM 节点，整理侧栏与页脚，并隐藏被皮肤替代的组件。原生组件的事件和资源仍由宿主管理。未知的侧栏组件保留在正文下方，而不是丢弃。该过程不会写入用户的配置或内容文件；禁用插件后重新构建即可恢复。
+
+未安装的可选原生组件不会自动安装或启用，对应入口隐藏。自动接入面向标准三栏 DOM；自定义 frame 可使用独立组件自行安排。所有宿主相关的路径只出现在安装测试的 `QUARTZ_HOST` 参数中，运行时代码不依赖特定站点。
 
 所以，改了插件却没影响到页面时，可以按顺序检查：是否重新打包、站点是否安装了新包、布局是否使用了相应组件、站点是否重新构建。
 
@@ -51,11 +57,10 @@ npm run test:browser
 npm pack
 ```
 
-然后进入实际站点，安装新包并构建：
+也可以验证整个安装过程：
 
 ```sh
-npm install ./plugins/quartz-skin-vector-版本号.tgz
-npx quartz build
+QUARTZ_HOST=/path/to/quartz npm run test:install
 ```
 
 单元测试覆盖配置和渲染逻辑，浏览器测试检查测试页面中的布局和交互。实际站点还可能有自己的组件和样式，所以最后仍需查看桌面、窄屏、深色主题和页面切换。
