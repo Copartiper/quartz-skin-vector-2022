@@ -1,6 +1,8 @@
 # Quartz Vector 2022 Skin
 
-让 Quartz 看起来更像维基百科：顶部搜索、可移入侧栏的菜单、文章目录、外观设置，以及文章底部的导航模板和分类栏。
+基于 [wikimedia/mediawiki-skins-Vector](https://github.com/wikimedia/mediawiki-skins-Vector) 二次开发的仿 Wikipedia Quartz 布局插件：顶部搜索、可移入侧栏的菜单、文章目录、外观设置，以及文章底部的导航模板和分类栏。
+
+![Preview](./preview.png)
 
 皮肤适用于 Quartz 5 社区插件系统。中文、英文界面都可以使用，手机上也能阅读。它主要负责页面外观；账户、在线编辑、页面历史等 MediaWiki 后台功能，需要另外实现。
 
