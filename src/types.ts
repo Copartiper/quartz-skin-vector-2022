@@ -60,3 +60,32 @@ export interface ExampleComponentOptions {
   /** CSS class name to apply */
   className?: string;
 }
+
+/** Vector 2022 skin. Install VectorHeader once in the beforeBody slot. */
+export interface VectorSkinOptions {
+  /** auto uses the Quartz site locale; Chinese and English UI are included. */
+  locale?: "auto" | "en-US" | "zh-CN";
+  /** Defaults to Quartz configuration.pageTitle. */
+  wordmark?: string;
+  tagline?: string;
+  /** Logo URL; relative paths resolve from the site root. Empty hides the logo. */
+  logoUrl?: string;
+  logoAlt?: string;
+  /** Time zone used by the revision footer. */
+  revisionTimeZone?: string;
+  /** Defaults to a relative link to the site root, including on nested pages. */
+  homeUrl?: string;
+  defaultTheme?: "auto" | "light" | "dark";
+  defaultTextSize?: "small" | "standard" | "large";
+  defaultWidth?: "standard" | "wide";
+  showAppearance?: boolean;
+  /** Footer text colors by theme: hex colors or CSS custom properties (var(--name)). */
+  footerTextColors?: { light?: string; dark?: string };
+  /** Footer body in Markdown. Raw HTML is escaped; takes precedence over footerParagraphs. */
+  footerMarkdown?: string;
+  /** Footer paragraphs, each containing plain text or links. No HTML is accepted. */
+  footerParagraphs?: Array<Array<{ text: string; href?: string; bold?: boolean }>>;
+  footerLinks?: Array<{ label: string; href: string }>;
+  /** Links shown inside the main menu. */
+  navigation?: Array<{ label: string; href: string; section?: string }>;
+}

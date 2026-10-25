@@ -1,2 +1,9 @@
-export { default as ExampleComponent } from "./ExampleComponent";
-export type { ExampleComponentOptions } from "./ExampleComponent";
+export {
+  VectorSkin,
+  VectorHeader,
+  VectorTOC,
+  VectorAppearance,
+  VectorRevision,
+  VectorFooter,
+} from "./VectorSkin";
+export type { VectorSkinOptions } from "../types";

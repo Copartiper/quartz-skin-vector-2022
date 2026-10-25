@@ -1,0 +1,22 @@
+Quartz Vector 2022 skin
+
+The skin styles and layout are adapted from MediaWiki Vector (Vector 2022),
+https://github.com/wikimedia/mediawiki-skins-Vector, using the source snapshot
+provided in mediawiki-skins-Vector/ (skin.json requires MediaWiki >= 1.47.0).
+
+Upstream authors: Wikimedia Foundation's Readers Web Team, Trevor Parscal,
+Roan Kattouw, Alex Hollender, Bernard Wang, Clare Ming, Jan Drewniak,
+Jon Robson, Nick Ray, Sam Smith, Stephen Niedzielski, Volker E., and contributors.
+
+Reference files:
+  includes/templates/skin.mustache
+  resources/skins.vector.styles/variables.less
+  resources/skins.vector.styles/layouts/grid.less
+  resources/skins.vector.styles/typography.less
+
+Adaptation: MediaWiki PHP/Mustache/LESS and ResourceLoader dependencies are
+replaced by Quartz Preact components, SCSS and standalone browser code.
+This distribution is licensed under GPL-2.0-or-later; see LICENSE.Vector.
+The original plugin template remains under its MIT license, preserved in LICENSE.template.
+No Wikimedia logos or Wikipedia trademarks are included. This is an independent
+Quartz port, not an official Wikimedia or Quartz product.

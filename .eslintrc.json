@@ -12,7 +12,7 @@
   },
   "plugins": ["@typescript-eslint"],
   "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
-  "ignorePatterns": ["dist", "node_modules"],
+  "ignorePatterns": ["dist", "node_modules", "mediawiki-skins-Vector"],
   "rules": {
     "@typescript-eslint/no-unused-vars": [
       "error",
@@ -35,6 +35,15 @@
       "files": ["types/**/*.d.ts"],
       "rules": {
         "@typescript-eslint/triple-slash-reference": "off"
+      }
+    },
+    {
+      "files": ["test/*.mjs"],
+      "parserOptions": {
+        "project": null
+      },
+      "env": {
+        "browser": true
       }
     }
   ]

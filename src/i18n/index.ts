@@ -1,9 +1,6 @@
 import enUS from "./locales/en-US";
-
-const locales: Record<string, typeof enUS> = {
-  "en-US": enUS,
-};
+import zhCN from "./locales/zh-CN";
 
 export function i18n(locale: string) {
-  return locales[locale] || enUS;
+  return locale.toLowerCase().startsWith("zh") ? zhCN : enUS;
 }
