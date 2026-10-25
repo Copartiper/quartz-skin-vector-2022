@@ -202,3 +202,31 @@ it("renders self-links as text and accepts only safe per-template colors", () =>
   expect(output).not.toContain("display:none");
   expect(output).toContain('href="../../notes/other"');
 });
+
+it("keeps cached Markdown links specific to each page", () => {
+  const footer = VectorFooter({ footerMarkdown: "[Terms](terms)" });
+  const navigation = VectorNavigation({
+    navigationTemplates: [
+      {
+        title: "[Current](notes/nested/page)",
+        rows: [{ label: "Group", content: "[Other](notes/other)" }],
+      },
+    ],
+  });
+  const data = (slug: string) =>
+    ({
+      ...props,
+      fileData: {
+        ...props.fileData,
+        slug,
+        frontmatter: { navboxes: [0] },
+      },
+    }) as unknown as QuartzComponentProps;
+  expect(html(footer, data("notes/nested/page"))).toContain('href="../../terms"');
+  expect(html(footer, data("index"))).toContain('href="./terms"');
+  expect(html(navigation, data("notes/nested/page"))).toContain('aria-current="page"');
+  const other = html(navigation, data("index"));
+  expect(other).not.toContain('aria-current="page"');
+  expect(other).toContain('href="./notes/nested/page"');
+  expect(html(navigation, data("notes/nested/page"))).toContain('href="../../notes/other"');
+});

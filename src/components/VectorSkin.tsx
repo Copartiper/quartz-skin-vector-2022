@@ -264,11 +264,13 @@ export const VectorAppearance = ((options?: VectorSkinOptions) => {
 /** Modified metadata is shown independently of reading-time statistics. */
 export const VectorRevision = ((options?: VectorSkinOptions) => {
   const opts = resolveOptions(options);
+  let formatter: Intl.DateTimeFormat;
   const Revision: QuartzComponent = (props) => {
     const date = props.fileData.dates?.modified;
-    if (!date || Number.isNaN(new Date(date).getTime())) return null;
+    if (!date) return null;
     const parsed = new Date(date);
-    const parts = new Intl.DateTimeFormat("zh-CN", {
+    if (Number.isNaN(parsed.getTime())) return null;
+    formatter ??= new Intl.DateTimeFormat("zh-CN", {
       timeZone: opts.revisionTimeZone,
       year: "numeric",
       month: "numeric",
@@ -277,7 +279,8 @@ export const VectorRevision = ((options?: VectorSkinOptions) => {
       hour: "2-digit",
       minute: "2-digit",
       hourCycle: "h23",
-    }).formatToParts(parsed);
+    });
+    const parts = formatter.formatToParts(parsed);
     const value = (type: Intl.DateTimeFormatPartTypes) =>
       parts.find((part) => part.type === type)?.value;
     return (
@@ -294,26 +297,32 @@ export const VectorRevision = ((options?: VectorSkinOptions) => {
 }) satisfies QuartzComponentConstructor;
 
 export const VectorFooter = ((options?: VectorSkinOptions) => {
+  const footerBodies = new Map<string, string>();
   const Footer: QuartzComponent = (props) => {
     const base = `${pathToRoot(props.fileData.slug ?? ("index" as FullSlug))}/`;
     const url = (href: string) => {
       const value = safeUrl(href);
       return /^(?:https?:|\/|#|\.{1,2}\/)/i.test(value) ? value : base + value;
     };
-    const markdown = new Marked({
-      renderer: {
-        html({ text }) {
-          return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        },
-      },
-      walkTokens(token) {
-        if (token.type === "link" || token.type === "image") token.href = url(token.href);
-      },
-    });
     const body =
       options?.footerMarkdown === undefined
         ? undefined
-        : markdown.parse(options.footerMarkdown, { async: false });
+        : (footerBodies.get(base) ??
+          (() => {
+            const markdown = new Marked({
+              renderer: {
+                html({ text }) {
+                  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                },
+              },
+              walkTokens(token) {
+                if (token.type === "link" || token.type === "image") token.href = url(token.href);
+              },
+            });
+            const rendered = markdown.parse(options.footerMarkdown!, { async: false });
+            footerBodies.set(base, rendered);
+            return rendered;
+          })());
     return (
       <div class="qv-footer-content">
         {body !== undefined && (
@@ -343,6 +352,8 @@ export const VectorFooter = ((options?: VectorSkinOptions) => {
 
 /** Page frontmatter navboxes accepts template indexes or inline template objects. */
 export const VectorNavigation = ((options?: VectorSkinOptions) => {
+  const lexer = new Marked();
+  const inlineTokens = new Map<string, ReturnType<typeof lexer.Lexer.lexInline>>();
   const Navigation: QuartzComponent = (props) => {
     const configured = options?.navigationTemplates ?? [];
     const selected = props.fileData.frontmatter?.navboxes;
@@ -396,7 +407,20 @@ export const VectorNavigation = ((options?: VectorSkinOptions) => {
         if (token.type === "link" || token.type === "image") token.href = url(token.href);
       },
     });
-    const text = (value: string) => ({ __html: markdown.parseInline(value, { async: false }) });
+    const text = (value: string) => {
+      let tokens = inlineTokens.get(value);
+      if (!tokens) {
+        tokens = lexer.Lexer.lexInline(value);
+        // Bound memory when many pages provide unique inline templates.
+        if (inlineTokens.size >= 512) inlineTokens.delete(inlineTokens.keys().next().value!);
+        inlineTokens.set(value, tokens);
+      }
+      const pageTokens = structuredClone(tokens);
+      markdown.walkTokens(pageTokens, (token) => {
+        if (token.type === "link" || token.type === "image") token.href = url(token.href);
+      });
+      return { __html: markdown.Parser.parseInline(pageTokens, markdown.defaults) };
+    };
     const templates = selected
       .map((item) => (typeof item === "number" ? configured[item] : item))
       .filter(

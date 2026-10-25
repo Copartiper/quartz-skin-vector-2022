@@ -168,6 +168,21 @@ try {
   );
   const suggestionsInput = page.locator(".qv-search-form input");
   await suggestionsInput.fill("正文独有");
+  // Escape must cancel a queued debounced query instead of reopening the popup.
+  await suggestionsInput.press("Escape");
+  await page.waitForTimeout(150);
+  assert.equal(await page.locator(".qv-search-suggestions").isVisible(), false);
+  await suggestionsInput.evaluate((input) => {
+    input.value = "连接";
+    input.dispatchEvent(new InputEvent("input", { bubbles: true, isComposing: true }));
+  });
+  await page.waitForTimeout(150);
+  assert.equal(await page.locator(".qv-search-suggestions").isVisible(), false);
+  await suggestionsInput.evaluate((input) => {
+    input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true }));
+  });
+  await page.locator(".qv-suggestion").waitFor();
+  await suggestionsInput.fill("正文独有");
   await page.locator(".qv-full-search strong").waitFor();
   assert.equal(await page.locator(".qv-full-search strong").textContent(), "正文独有");
   assert.equal(

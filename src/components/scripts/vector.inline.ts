@@ -1,5 +1,9 @@
-import { suggestPages, type SearchSuggestion } from "../../search-suggestions";
-let qvSuggestionIndex: Promise<SearchSuggestion[]> | undefined;
+import {
+  prepareSuggestions,
+  suggestPreparedPages,
+  type SearchSuggestion,
+} from "../../search-suggestions";
+let qvSuggestionIndex: Promise<ReturnType<typeof prepareSuggestions>> | undefined;
 /** Vector preferences and section tracking, reinitialized on Quartz SPA navigation. */
 const qvAllowed: Record<string, readonly string[]> = {
   theme: ["auto", "light", "dark"],
@@ -236,12 +240,18 @@ function initVector() {
     floating.textContent = "☰";
     floating.setAttribute("aria-label", "展开目录");
     document.body.append(floating);
-    const refresh = () => {
+    const tocPanel = document.querySelector<HTMLElement>('[data-qv-panel="toc"]');
+    let frame = 0;
+    const updateFloating = () => {
+      frame = 0;
       if (tocHost.open) return;
-      const panel = document.querySelector<HTMLElement>('[data-qv-panel="toc"]');
-      const source = tocHost.hidden ? panel : tocHost;
+      const source = tocHost.hidden ? tocPanel : tocHost;
       const rect = source?.getBoundingClientRect();
-      floating.hidden = !!rect && rect.bottom > 0 && rect.top < window.innerHeight;
+      const hidden = !!rect && rect.bottom > 0 && rect.top < window.innerHeight;
+      if (floating.hidden !== hidden) floating.hidden = hidden;
+    };
+    const refresh = () => {
+      if (!frame) frame = requestAnimationFrame(updateFloating);
     };
     const open = () => {
       floating.hidden = true;
@@ -281,6 +291,7 @@ function initVector() {
     observer.observe(tocHost, { attributes: true, attributeFilter: ["hidden"] });
     refresh();
     cleanup.push(() => {
+      cancelAnimationFrame(frame);
       floating.remove();
       observer.disconnect();
       tocHost.removeEventListener("toggle", onToggle);
@@ -304,7 +315,9 @@ function initVector() {
     searchForm.hidden = !search;
     const input = searchForm.querySelector<HTMLInputElement>("input")!;
     const popup = searchForm.querySelector<HTMLElement>(".qv-search-suggestions")!;
+    let suggestionTimer = 0;
     const closeSuggestions = () => {
+      clearTimeout(suggestionTimer);
       popup.hidden = true;
       input.setAttribute("aria-expanded", "false");
       input.removeAttribute("aria-activedescendant");
@@ -358,6 +371,7 @@ function initVector() {
               )
             : [],
         )
+        .then(prepareSuggestions)
         .catch(() => {
           qvSuggestionIndex = undefined;
           return [];
@@ -366,7 +380,7 @@ function initVector() {
       if (disposed || revision !== current || document.activeElement !== input) return;
       popup.replaceChildren();
       active = -1;
-      for (const page of suggestPages(pages, query)) {
+      for (const page of suggestPreparedPages(pages, query)) {
         const link = document.createElement("a");
         link.href = `${header.dataset.qvRoot}${page.slug.split("/").map(encodeURIComponent).join("/")}`;
         link.className = "qv-suggestion";
@@ -422,8 +436,16 @@ function initVector() {
         closeSuggestions();
       }
     };
+    const scheduleSuggestions = (event: Event) => {
+      clearTimeout(suggestionTimer);
+      ++revision;
+      closeSuggestions();
+      if ((event instanceof InputEvent && event.isComposing) || !input.value.trim()) return;
+      suggestionTimer = window.setTimeout(showSuggestions, 100);
+    };
     searchForm.addEventListener("submit", openSearch);
-    input.addEventListener("input", showSuggestions);
+    input.addEventListener("input", scheduleSuggestions);
+    input.addEventListener("compositionend", scheduleSuggestions);
     input.addEventListener("focus", showSuggestions);
     input.addEventListener("keydown", onKey);
     popup.addEventListener("click", onPopupClick);
@@ -431,8 +453,10 @@ function initVector() {
     document.addEventListener("focusin", onOutside);
     cleanup.push(() => {
       disposed = true;
+      clearTimeout(suggestionTimer);
       searchForm.removeEventListener("submit", openSearch);
-      input.removeEventListener("input", showSuggestions);
+      input.removeEventListener("input", scheduleSuggestions);
+      input.removeEventListener("compositionend", scheduleSuggestions);
       input.removeEventListener("focus", showSuggestions);
       input.removeEventListener("keydown", onKey);
       popup.removeEventListener("click", onPopupClick);
@@ -453,30 +477,48 @@ function initVector() {
     cleanup.push(() => bottomGraph.removeEventListener("toggle", onGraphToggle));
   }
   const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".qv-toc a"));
-  if (article && "IntersectionObserver" in window) {
+  const headingLinks = new Map(links.map((link) => [link.getAttribute("href")?.slice(1), link]));
+  let activeLink: HTMLAnchorElement | undefined;
+  if (article && links.length && "IntersectionObserver" in window) {
     const observer = new IntersectionObserver(
       (entries) => {
         const heading = entries.find((entry) => entry.isIntersecting)?.target;
         if (!heading) return;
-        for (const link of links) {
-          if (link.getAttribute("href")?.slice(1) === heading.id) {
-            link.setAttribute("aria-current", "location");
-          } else link.removeAttribute("aria-current");
-        }
+        const next = headingLinks.get(heading.id);
+        if (next === activeLink) return;
+        activeLink?.removeAttribute("aria-current");
+        next?.setAttribute("aria-current", "location");
+        activeLink = next;
       },
       { rootMargin: "-8% 0px -65% 0px" },
     );
     article
       .querySelectorAll("h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]")
       .forEach((heading) => observer.observe(heading));
-    cleanup.push(() => observer.disconnect());
+    cleanup.push(() => {
+      observer.disconnect();
+      activeLink?.removeAttribute("aria-current");
+    });
   }
   qvDispose = () => {
     cleanup.forEach((fn) => fn());
     qvDispose = undefined;
   };
-  window.addCleanup?.(() => qvDispose?.());
+  // Capture this instance so old cleanup callbacks cannot dispose a newer page.
+  const dispose = qvDispose;
+  window.addCleanup?.(() => {
+    if (qvDispose === dispose) dispose();
+  });
 }
-document.addEventListener("nav", initVector);
-document.addEventListener("render", initVector);
+let initQueued = false;
+function scheduleVector() {
+  if (initQueued) return;
+  initQueued = true;
+  queueMicrotask(() => {
+    initQueued = false;
+    initVector();
+  });
+}
+document.addEventListener("nav", scheduleVector);
+document.addEventListener("render", scheduleVector);
 initVector();
