@@ -29,6 +29,33 @@ const html = (component: unknown, data = props) =>
   render(h(component as ComponentType<QuartzComponentProps>, data));
 
 describe("Vector skin server rendering", () => {
+  it("renders nested, accessible TOC branches and preserves literal heading text", () => {
+    const output = html(VectorTOC());
+    expect(output).toContain('class="qv-toc-children"');
+    expect(output).toContain('aria-expanded="true"');
+    expect(output).toContain('aria-controls="qv-toc-branch-0"');
+    expect(output).toContain("&lt;Introduction>");
+    expect(output).toContain('href="#details"');
+  });
+  it("collapses subsections only when the TOC exceeds 28 headings", () => {
+    const data = (count: number) =>
+      ({
+        ...props,
+        fileData: {
+          ...props.fileData,
+          toc: Array.from({ length: count }, (_, i) => ({
+            depth: i === 0 ? 1 : 2,
+            slug: `section-${i}`,
+            text: `Section ${i}`,
+          })),
+        },
+      }) as QuartzComponentProps;
+    expect(html(VectorTOC(), data(28))).toContain('aria-expanded="true"');
+    const long = html(VectorTOC(), data(29));
+    expect(long).toContain('aria-expanded="false"');
+    expect(long).toContain('id="qv-toc-branch-0" hidden');
+  });
+
   it("renders Markdown footer body with safe relative links and no raw HTML", () => {
     const output = html(
       VectorFooter({
@@ -109,7 +136,7 @@ describe("Vector skin server rendering", () => {
     const output = html(VectorTOC());
     expect(output).toContain('href="#intro"');
     expect(output).toContain("&lt;Introduction>");
-    expect(output).toContain('class="qv-depth-1"');
+    expect(output).toContain('class="qv-toc-item qv-depth-1"');
   });
   it("hides the table of contents on pages without headings", () => {
     expect(html(VectorTOC(), { ...props, fileData: {} })).toBe("");

@@ -1,6 +1,6 @@
 # Quartz Vector 2022 Skin
 
-基于 [wikimedia/mediawiki-skins-Vector](https://github.com/wikimedia/mediawiki-skins-Vector) 二次开发的仿 Wikipedia Quartz 布局插件：顶部搜索、可移入侧栏的菜单、文章目录、外观设置，以及文章底部的导航模板和分类栏。
+基于 [wikimedia/mediawiki-skins-Vector](https://github.com/wikimedia/mediawiki-skins-Vector) 二次开发的仿 Wikipedia Quartz 布局插件：顶部搜索、可移入侧栏的菜单、文章目录、外观设置、条目信息框，以及文章底部的导航模板和分类栏。
 
 ![Preview](./preview.png)
 
@@ -68,7 +68,7 @@ plugins:
 
 主菜单、目录、探索都可以「移至侧栏」，也可以点「隐藏」放回按钮里。左侧从上到下是主菜单、目录、探索。外观面板固定在右侧，隐藏后通过右上角的眼镜按钮打开。
 
-桌面端会保留两侧空间，所以隐藏菜单不会让正文突然左右移动。页面窄于 1120 px 时，四个菜单都改用按钮打开，并取消侧栏留白。没有分节的文章不显示目录；目录入口滚出屏幕后，左上角会出现悬浮目录按钮。
+桌面端的「标准」宽度会保留两侧空间，所以隐藏菜单不会让正文突然左右移动；「宽」会把空侧栏的位置交给正文。页面窄于 1120 px 时，四个菜单都改用按钮打开，并取消侧栏留白。没有分节的文章不显示目录；目录入口滚出屏幕后，左上角会出现悬浮目录按钮。
 
 你可以设置访客第一次打开网站时的阅读外观：
 
@@ -86,6 +86,18 @@ plugins:
 浏览器会记住访客自己的选择，之后优先使用这些选择。因此，改了默认设置却没看到变化时，可以先检查浏览器里是否已经选过其他设置。
 
 顶部搜索先给出匹配标题或描述的候选。想搜正文时，点击候选框底部的「搜索包含……的页面」，就会打开 Quartz 原来的全文搜索和页面预览。搜索词会加粗显示，链接预览和搜索预览中会隐藏网站页头，只保留文章内容。
+
+### 阅读时的目录与宽度
+
+目录按文章标题的层级排列，可以用小箭头展开、收起子节。章节不超过 28 个时默认展开；更多时先收起子节，方便快速浏览整篇文章的结构。打开指向子节的链接时会展开它的父节，滚动阅读只更新当前位置的提示，不会反复替你展开、收起目录。没有分节的文章不显示目录。
+
+「标准」宽度限制页面宽度并保留左右栏位，隐藏菜单时正文保持原位。「宽」会让页面铺满浏览器，并把没有固定菜单的侧栏空间交给正文。站点可以用 `defaultWidth: standard` / `wide` 设置初始值，读者已保存的选择优先。
+
+右下角是「页面最顶」和「页面最底」两个圆形按钮。向下滚动且文章标题已经离开视野时出现，向上滚动或回到标题处时隐藏。点击后直接跳到整页顶部或底部，手机上也可使用。
+
+菜单可以按 Escape 关闭，焦点会回到打开它的按钮；同一时间只展开一个浮动菜单。搜索候选支持方向键选择，选中的项目会自动滚到可见位置。
+
+这些细节参考了 MediaWiki 的[桌面版改进](https://www.mediawiki.org/wiki/Reading/Web/Desktop_Improvements/zh)、[更新记录](https://www.mediawiki.org/wiki/Reading/Web/Desktop_Improvements/Updates/zh)和 [Vector 2022 设计说明](https://www.mediawiki.org/wiki/Skin:Vector/2022/Design_documentation)，并结合 Quartz 的文章和搜索功能调整。
 
 ## 写页脚
 
@@ -119,6 +131,39 @@ footerTextColors:
 ```
 
 这里可以填十六进制颜色，也可以使用 `var(--变量名)`。`var(--qv-fg)` 就是正文文字颜色。旧配置 `footerParagraphs` 仍然可用，但同时写了 `footerMarkdown` 时，以 Markdown 为准。
+
+## 给文章加信息框（Infobox）
+
+人物、地点或组织条目经常需要一张资料卡。在文章开头的 YAML 中加上 `infobox` 即可；没有配置的文章不会显示。电脑上正文会环绕信息框，手机上则把它放在正文开头。
+
+```yaml
+---
+title: 示例组织
+infobox:
+  title: 示例组织
+  subtitle: Example Organization
+  image: static/icon.png
+  imageAlt: 组织标志
+  caption: 组织标志与名称
+  color:
+    light: "#c5d8ef"
+    dark: "#293e57"
+  rows:
+    - heading: 基本资料
+    - label: 类型
+      content: 知识共享组织
+    - label: 所在地
+      content: "[示例城市](places/example)"
+    - heading: 更多信息
+    - label: 理念
+      content: "**开放 · 普惠 · 共享**"
+  below: "参阅[相关条目](related)"
+---
+```
+
+`title` 和 `rows` 必填，其余都可以省略。每一行可以写 `heading` 作为分组标题，或者写 `label` 和 `content` 作为字段和值。标题、副标题、图片说明、字段和底部备注都支持行内 Markdown，原始 HTML 会被转义。图片及 Markdown 链接中的普通相对路径从站点根目录解析；也可以填写完整的 HTTPS 地址。图片没有说明性内容时可以省略 `imageAlt`，否则建议写清楚图片是什么。`color.light` 和 `color.dark` 接受十六进制颜色，控制对应主题下的分组背景。
+
+使用手动布局 API 的站点，可以将导出的 `VectorInfobox()` 放到文章正文开头；标准插件安装会自动放好位置。
 
 ## 给文章加导航模板
 
@@ -232,6 +277,10 @@ QUARTZ_HOST=/path/to/quartz npm run test:install
 ```
 
 浏览器测试会在系统临时目录的 `quartz-vector-preview/` 中留下预览和截图。安装测试另外创建独立站点，并复制插件源码供安装器构建，不会修改所提供的 Quartz 站点。安装到自己的站点后，仍建议构建并查看页面。
+
+### 性能检查
+
+运行 `npm run test:performance` 可以测量 100 页首次渲染与缓存后重复渲染的耗时，并统计 Git 进程数。`npm run test:browser` 还会检查长目录滚动的标题位置读取次数，以及布局变化后的高亮是否正确。具体结果和适用范围见 [性能记录](PERFORMANCE.md)。
 
 ## 来源和许可证
 

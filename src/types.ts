@@ -103,3 +103,19 @@ export interface VectorNavigationTemplate {
   rows: Array<{ label: string; content: string }>;
   links?: Array<{ label: string; href: string }>;
 }
+
+/** MediaWiki-style article information box. Text fields accept inline Markdown. */
+export interface VectorInfoboxData {
+  title: string;
+  subtitle?: string;
+  /** Image URL; relative paths start at the site root. */
+  image?: string;
+  imageAlt?: string;
+  caption?: string;
+  color?: { light?: string; dark?: string };
+  rows: Array<
+    | { heading: string; label?: never; content?: never }
+    | { heading?: never; label: string; content: string }
+  >;
+  below?: string;
+}

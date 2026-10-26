@@ -153,6 +153,29 @@ export const VectorHeader = ((options?: VectorSkinOptions) => {
             hidden
           />
         </form>
+        <div class="qv-scroll-buttons" hidden aria-label={t.pageNavigation}>
+          <button type="button" data-qv-scroll="top" aria-label={t.pageTop} title={t.pageTop}>
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M3 2h14v2H3zm6 16V8.8l-4.3 4.3-1.4-1.4L10 5l6.7 6.7-1.4 1.4L11 8.8V18z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            data-qv-scroll="bottom"
+            aria-label={t.pageBottom}
+            title={t.pageBottom}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+              <path
+                d="M3 16h14v2H3zm6-14v9.2L4.7 6.9 3.3 8.3 10 15l6.7-6.7-1.4-1.4-4.3 4.3V2z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+        </div>
       </header>
     );
   };
@@ -173,7 +196,42 @@ export const VectorTOC = ((options?: VectorSkinOptions) => {
     const t = labels(props, opts.locale);
     const toc = props.fileData.toc ?? [];
     if (!toc.length) return null;
-    const min = toc.length ? Math.min(...toc.map((entry) => entry.depth)) : 1;
+    type Node = { text: string; slug: string; depth: number; index: number; children: Node[] };
+    const tree: Node[] = [];
+    const stack: Node[] = [];
+    toc.forEach((entry, index) => {
+      const node: Node = { ...entry, index, children: [] };
+      while (stack.length && stack[stack.length - 1]!.depth >= entry.depth) stack.pop();
+      (stack.length ? stack[stack.length - 1]!.children : tree).push(node);
+      stack.push(node);
+    });
+    const expanded = toc.length <= 28;
+    const items = (nodes: Node[], depth = 0): import("preact").VNode[] =>
+      nodes.map((entry) => (
+        <li class={`qv-toc-item qv-depth-${Math.min(depth, 3)}`}>
+          <div class="qv-toc-row">
+            {!!entry.children.length && (
+              <button
+                type="button"
+                class="qv-toc-toggle"
+                aria-expanded={expanded}
+                aria-controls={`qv-toc-branch-${entry.index}`}
+                aria-label={`${t.expand} / ${t.collapse}: ${entry.text}`}
+              >
+                <svg width="12" height="12" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="m7 3 7 7-7 7-1.4-1.4L11.2 10 5.6 4.4z" fill="currentColor" />
+                </svg>
+              </button>
+            )}
+            <a href={`#${entry.slug}`}>{entry.text}</a>
+          </div>
+          {!!entry.children.length && (
+            <ul class="qv-toc-children" id={`qv-toc-branch-${entry.index}`} hidden={!expanded}>
+              {items(entry.children, depth + 1)}
+            </ul>
+          )}
+        </li>
+      ));
     return (
       <nav class="qv-toc qv-panel qv-dock-panel" data-qv-panel="toc" aria-label={t.contents}>
         <div class="qv-menu-heading">
@@ -191,11 +249,7 @@ export const VectorTOC = ((options?: VectorSkinOptions) => {
           <li>
             <a href="#qv-content">{t.beginning}</a>
           </li>
-          {toc.map((entry) => (
-            <li class={`qv-depth-${Math.min(entry.depth - min, 3)}`}>
-              <a href={`#${entry.slug}`}>{entry.text}</a>
-            </li>
-          ))}
+          {items(tree)}
         </ul>
       </nav>
     );

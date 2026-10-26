@@ -31,3 +31,6 @@ export { VectorSearchIndex } from "./search-index";
 export { VectorPage } from "./components/VectorPage";
 // The loader uses the default factory for the emitter category.
 export { VectorSearchIndex as default } from "./search-index";
+
+export { VectorInfobox } from "./components/VectorInfobox";
+export type { VectorInfoboxData } from "./types";

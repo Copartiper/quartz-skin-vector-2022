@@ -4,18 +4,21 @@
 
 ## 先找到要改的文件
 
-| 想改什么                                | 从哪里开始                                                |
-| --------------------------------------- | --------------------------------------------------------- |
-| 自动接入组件、修订时间和底部分类        | `src/components/VectorPage.tsx`                           |
-| 原生组件搬移与自动布局                  | `src/components/scripts/auto-layout.ts`                   |
-| 页头、目录、外观、页脚、导航模板的 HTML | `src/components/VectorSkin.tsx`                           |
-| 颜色、字号、间距、响应式布局            | `src/components/styles/vector.scss`                       |
-| 菜单固定、悬浮目录、搜索候选等交互      | `src/components/scripts/vector.inline.ts`                 |
-| 顶部候选的筛选与排序                    | `src/search-suggestions.ts`                               |
-| 搜索候选需要的数据文件                  | `src/search-index.ts`                                     |
-| 配置类型、默认值、链接检查              | `src/types.ts`、`src/vector-options.ts`                   |
-| 界面翻译                                | `src/i18n/`                                               |
-| 对外导出和插件发现信息                  | `src/index.ts`、`src/components/index.ts`、`package.json` |
+| 想改什么                                     | 从哪里开始                                                |
+| -------------------------------------------- | --------------------------------------------------------- |
+| 自动接入组件、修订时间和底部分类             | `src/components/VectorPage.tsx`                           |
+| Infobox 数据校验、Markdown 和资料卡 HTML     | `src/components/VectorInfobox.tsx`                        |
+| Git 修订时间与构建批次缓存                   | `src/revision.ts`                                         |
+| 目录展开、位置缓存与活动节高亮               | `src/components/scripts/toc.ts`                           |
+| 原生组件搬移与自动布局                       | `src/components/scripts/auto-layout.ts`                   |
+| 页头、目录、外观、页脚、导航模板的 HTML      | `src/components/VectorSkin.tsx`                           |
+| 颜色、字号、间距、响应式布局                 | `src/components/styles/vector.scss`                       |
+| 菜单固定、悬浮目录、宽度切换、搜索候选等交互 | `src/components/scripts/vector.inline.ts`                 |
+| 顶部候选的筛选与排序                         | `src/search-suggestions.ts`                               |
+| 搜索候选需要的数据文件                       | `src/search-index.ts`                                     |
+| 配置类型、默认值、链接检查                   | `src/types.ts`、`src/vector-options.ts`                   |
+| 界面翻译                                     | `src/i18n/`                                               |
+| 对外导出和插件发现信息                       | `src/index.ts`、`src/components/index.ts`、`package.json` |
 
 仓库里还保留着早期模板的 transformer、filter、emitter 示例。它们不是 Vector 皮肤的主要入口，修改皮肤通常不需要动它们。
 
@@ -43,7 +46,7 @@
 
 ## 内容和链接怎样处理？
 
-页脚和导航模板使用 Marked 渲染 Markdown。原始 HTML 会转义，链接经过 `safeUrl` 检查。导航模板中的当前页链接在渲染时改为加粗文字。
+页脚、信息框和导航模板使用 Marked 渲染 Markdown。原始 HTML 会转义，链接经过 `safeUrl` 检查。导航模板中的当前页链接在渲染时改为加粗文字。
 
 普通相对链接按站点根目录解析；以 `/`、`#`、`./`、`../` 或 HTTP(S) 开头的地址保留其含义。新增可填写链接的字段时，也应沿用这个规则。
 
@@ -71,6 +74,14 @@ QUARTZ_HOST=/path/to/quartz npm run test:install
 
 搜索候选首次输入时加载轻量索引，并在浏览器中一次性归一化标题和描述。后续查询复用这些数据，只保留排序最高的十项；输入有 100 毫秒防抖，输入法组合输入期间不查询。索引保留完整描述，避免改变匹配范围。
 
-悬浮目录的滚动更新按动画帧合并；目录高亮只更新前后活动链接。同一轮事件中的 `nav` 和 `render` 合并初始化，页面清理时取消待执行的计时器、动画帧和观察器。
+悬浮目录的滚动更新按动画帧合并；目录分支和高亮由 `src/components/scripts/toc.ts` 管理：滚动事件按动画帧合并，在布局变化时测量并缓存标题位置，滚动时以二分查找选择活动节，同时标记父节；只有点击或进入深链接时才展开父分支，滚动本身不改变展开状态。该模块返回清理函数，由主脚本的 SPA 清理统一调用。同一轮事件中的 `nav` 和 `render` 合并初始化，页面清理时取消待执行的计时器、动画帧和观察器。
 
 构建时，修订时间格式器在组件实例内复用，Markdown 页脚按站点根目录相对路径缓存 HTML。导航模板使用最多 512 条的内联 token 缓存，每页复制 token 后再处理相对链接和当前页标记，防止跨页面污染。配置改变后应重新创建组件实例。
+
+`width` 为 `standard` 时保留左右栏位并限制页面宽度；为 `wide` 时取消 `.page` 最大宽度，通过 CSS `:has()` 检查侧栏是否有固定菜单，空栏使用零宽轨道。右下角跳转按钮按动画帧检查滚动方向和文章标题位置，仅向下滚动且标题离开视野时显示，所有事件和动画帧均在 SPA 清理时移除。
+
+页面头部组件按界面语言复用。修订时间查询由 `src/revision.ts` 管理：每个 Quartz `buildId` 只读取一次工作区状态，未修改文件的提交时间按文件缓存；新一轮构建重建工作区快照，HEAD、脏文件状态和 mtime 未变时复用文件时间；mtime 变化也会让快照失效。Infobox 的 Markdown HTML 按「根目录相对路径 + 原文」缓存，最多 512 条，避免不同深度页面的链接互相污染。
+
+滚动过程不逐帧测量所有标题。文章及其父容器尺寸变化、图片加载、字体加载和窗口尺寸变化会使位置缓存失效；下一帧统一重测。高亮只修改旧、新活动节及其祖先。菜单移动提示只保留一个定时器和一次清理注册；悬浮目录的临时恢复函数在关闭后释放。
+
+测量方法和前后结果见 [性能记录](PERFORMANCE.md)。

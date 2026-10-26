@@ -42,6 +42,9 @@ export function prepareAutoLayout() {
         pageFooter.append(child);
     }
   }
+  const infobox = shell.querySelector<HTMLElement>("[data-qv-auto-infobox]");
+  const article = center.querySelector<HTMLElement>("article");
+  if (infobox && article) article.prepend(infobox);
   const tools = shell.querySelector<HTMLElement>(".qv-page-tools");
   const headingArea = center.querySelector<HTMLElement>(".page-header > .popover-hint");
   if (tools && headingArea) headingArea.append(tools);

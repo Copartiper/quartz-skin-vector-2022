@@ -7,7 +7,7 @@ import { h } from "preact";
 import render from "preact-render-to-string";
 import { chromium } from "@playwright/test";
 import assert from "node:assert/strict";
-import { VectorSkin } from "../dist/index.js";
+const { VectorSkin } = await import(process.env.VECTOR_BROWSER_MODULE ?? "../dist/index.js");
 const skin = VectorSkin({
   locale: "zh-CN",
   wordmark: "知识百科",
@@ -45,6 +45,23 @@ const props = {
 const component = (value) => render(h(value, props));
 const base = `.page>#quartz-body .page-header{margin:6rem 0 0}.page>#quartz-body{grid-template-areas:"grid-sidebar-left grid-header grid-sidebar-right" "grid-sidebar-left grid-center grid-sidebar-right" "grid-sidebar-left grid-footer grid-sidebar-right"}.page>#quartz-body .sidebar.left{grid-area:grid-sidebar-left}.page>#quartz-body .sidebar.right{grid-area:grid-sidebar-right}.page>#quartz-body .center{min-width:100%}.page>#quartz-body footer{grid-area:grid-footer}footer{opacity:.7}body{margin:0}.page{max-width:1500px;margin:auto}#quartz-body{display:grid}.sidebar{display:flex;flex-direction:column}article{min-width:0}.page-header{margin:2rem 0}.article-title{margin-bottom:.5rem}button{cursor:pointer}.search-container{display:none}.search-container.open{display:block;position:fixed;inset:20%;background:var(--qv-bg);border:1px solid;padding:2rem;z-index:100}`;
 const html = `<!doctype html><html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${base}\n${skin.header.css}</style></head><body><div class="page" id="quartz-root"><div id="quartz-body"><aside class="sidebar left"><div class="search"><button class="search-button">搜索本站</button><div class="search-container"><input aria-label="搜索" placeholder="搜索知识百科"></div></div></aside><div class="center"><div class="page-header"><header></header><div class="popover-hint">${component(skin.header)}<h1 class="article-title">知识的连接与发现</h1><p class="content-meta">2026年10月25日 · 阅读时间 3 分钟</p><nav class="qv-page-tools"><details class="qv-dock qv-toc-menu" data-qv-dock="toc"><summary aria-label="目录">☰</summary>${component(skin.toc)}</details><details class="qv-dock" data-qv-dock="explorer"><summary>探索</summary><nav class="qv-dock-panel" data-qv-panel="explorer"><div class="qv-menu-heading"><strong>探索</strong><button type="button" class="qv-menu-pin qv-dock-pin" data-pin-label="移至侧栏" data-unpin-label="隐藏">移至侧栏</button></div><a href="#overview">页面树</a></nav></details></nav></div></div><article class="popover-hint"><p>欢迎来到知识百科。这是一个由 <a href="#design">Quartz</a> 驱动的知识花园，采用 Vector 2022 的阅读布局。</p><h2 id="overview">概述</h2><p>知识来自持续的探索、记录与交流。这里的每一篇笔记都可以成为理解世界的一个起点。</p><blockquote>让知识自由生长，让想法彼此连接。</blockquote><h3 id="design">设计与排版</h3><p>简洁的导航、清晰的章节层次与舒适的行宽，将注意力留给内容。通过右侧的外观设置，可以调整阅读体验。</p><table><thead><tr><th>功能</th><th>说明</th></tr></thead><tbody><tr><td>目录</td><td>快速定位文章章节</td></tr><tr><td>外观</td><td>字号、宽度与配色设置</td></tr></tbody></table><span id="100%"></span><h2 id="reading">延伸阅读</h2><p>探索更多主题，发现新的联系。</p>${"<p>阅读、思考、连接。把分散的信息整理成有意义的知识。</p>".repeat(12)}</article><div class="page-footer">${component(skin.navigation)}<nav class="qv-categories"><a href="tags/">分类</a>：<ul class="tags"><li><a class="internal tag-link" href="tags/knowledge">知识</a></li><li><a class="internal tag-link" href="tags/category">分类</a></li></ul></nav></div></div><aside class="sidebar right">${component(skin.appearance)}</aside><footer class="qv-site-footer">知识百科 · Powered by Quartz · Vector 2022 skin</footer></div></div><script>window.cleanups=[];window.addCleanup=fn=>window.cleanups.push(fn);document.querySelector('.search-button').onclick=()=>document.querySelector('.search-container').classList.add('open');</script><script>${skin.header.afterDOMLoaded}</script></body></html>`;
+const longProps = {
+  ...props,
+  fileData: {
+    ...props.fileData,
+    toc: Array.from({ length: 500 }, (_, i) => ({
+      depth: i === 1 ? 2 : i === 2 ? 3 : 1,
+      slug: `section-${i}`,
+      text: `Section ${i}`,
+    })),
+  },
+};
+const longHtml = html
+  .replace(component(skin.toc), render(h(skin.toc, longProps)))
+  .replace(
+    /<article class="popover-hint">[\s\S]*?<\/article>/,
+    `<article class="popover-hint">${longProps.fileData.toc.map((entry) => `<h${entry.depth + 1} id="${entry.slug}">${entry.text}</h${entry.depth + 1}><p>${"Reading content. ".repeat(50)}</p>`).join("")}</article>`,
+  );
 const server = createServer((req, res) => {
   if (req.url.endsWith("vector-search.json")) {
     res.setHeader("Content-Type", "application/json");
@@ -57,7 +74,7 @@ const server = createServer((req, res) => {
     return;
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.end(html);
+  res.end(req.url.startsWith("/long") ? longHtml : html);
 });
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 let browser;
@@ -72,6 +89,110 @@ try {
   assert.equal(await page.locator(".qv-navbox").first().getAttribute("open"), "");
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  const longPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await longPage.goto(`http://127.0.0.1:${server.address().port}/long#section-2`);
+  // A direct subsection link reveals all parent branches, even in a long TOC.
+  await longPage.waitForFunction(
+    () => document.querySelector("#qv-toc-branch-1")?.hidden === false,
+  );
+  await longPage.evaluate(() => window.scrollTo(0, 0));
+  await longPage.locator(".qv-toc-menu > summary").click();
+  assert.equal(await longPage.locator("#qv-toc-branch-0").isVisible(), true);
+  await longPage.locator('.qv-toc-toggle[aria-controls="qv-toc-branch-0"]').click();
+  assert.equal(await longPage.locator("#qv-toc-branch-0").isVisible(), false);
+  await longPage.keyboard.press("Escape");
+  assert.equal(await longPage.locator(".qv-toc-menu").getAttribute("open"), null);
+  assert.equal(
+    await longPage
+      .locator(".qv-toc-menu > summary")
+      .evaluate((el) => el === document.activeElement),
+    true,
+  );
+  await longPage.locator(".qv-menu > summary").click();
+  await longPage.locator(".qv-toc-menu > summary").click();
+  assert.equal(await longPage.locator(".qv-menu").getAttribute("open"), null);
+  await longPage.keyboard.press("Escape");
+  await longPage.evaluate(() => {
+    location.hash = "section-1";
+  });
+  await longPage.waitForFunction(
+    () => document.querySelector("#qv-toc-branch-0")?.hidden === false,
+  );
+  await longPage.waitForFunction(
+    () => document.querySelector(".qv-toc a[aria-current]")?.getAttribute("href") === "#section-1",
+  );
+  await longPage.evaluate(() => window.scrollTo(0, 0));
+  await longPage.waitForFunction(
+    () => document.querySelector(".qv-toc a[aria-current]")?.getAttribute("href") === "#qv-content",
+  );
+  await longPage.evaluate(() => {
+    window.qvHeadingReads = 0;
+    const original = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function (...args) {
+      if (this.matches("article h1, article h2, article h3, article h4, article h5, article h6"))
+        window.qvHeadingReads++;
+      return original.apply(this, args);
+    };
+  });
+  await longPage.waitForTimeout(50);
+  await longPage.evaluate(() => {
+    window.qvHeadingReads = 0;
+  });
+  for (let step = 1; step <= 20; step++) {
+    await longPage.evaluate((offset) => window.scrollTo(0, offset), step * 20);
+    await longPage.waitForTimeout(20);
+  }
+  const headingReads = await longPage.evaluate(() => window.qvHeadingReads);
+  if (!process.env.VECTOR_BENCH_SCROLL)
+    assert(
+      headingReads < longProps.fileData.toc.length,
+      `scrolling repeatedly measured ${headingReads} headings`,
+    );
+  // Layout changes must invalidate positions, not leave stale section highlighting.
+  await longPage.evaluate(() => {
+    const block = document.createElement("div");
+    block.style.height = "700px";
+    document.querySelector("article").prepend(block);
+  });
+  await longPage.waitForTimeout(50);
+  await longPage.evaluate(() => document.getElementById("section-3").scrollIntoView());
+  await longPage.waitForFunction(
+    () => document.querySelector(".qv-toc a[aria-current]")?.getAttribute("href") === "#section-3",
+  );
+  console.log(`TOC heading geometry reads across 20 scroll steps: ${headingReads}`);
+  await longPage.close();
+  const widthPage = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  await widthPage.goto(`http://127.0.0.1:${server.address().port}`);
+  const standardGeometry = await widthPage.locator(".center").boundingBox();
+  await widthPage.locator('[data-qv-panel="appearance"] .qv-dock-pin').click();
+  assert.deepEqual(await widthPage.locator(".center").boundingBox(), standardGeometry);
+  assert.equal(await widthPage.locator(".qv-scroll-buttons").isVisible(), false);
+  assert.equal(await widthPage.locator(".qv-page-width-toggle").count(), 0);
+  await widthPage.locator(".qv-appearance-menu > summary").click();
+  await widthPage.locator('input[name="qv-width"][value="wide"]').check();
+  assert.equal((await widthPage.locator(".page").boundingBox()).width, 1920);
+  assert.equal((await widthPage.locator(".center").boundingBox()).width, 1832);
+  await widthPage.keyboard.press("Escape");
+  await widthPage.evaluate(() => window.scrollTo(0, 400));
+  await widthPage.locator(".qv-scroll-buttons").waitFor({ state: "visible" });
+  await widthPage.evaluate(() => window.scrollTo(0, 300));
+  await widthPage.locator(".qv-scroll-buttons").waitFor({ state: "hidden" });
+  await widthPage.evaluate(() => window.scrollTo(0, 450));
+  await widthPage.locator(".qv-scroll-buttons").waitFor({ state: "visible" });
+  await widthPage.locator('[data-qv-scroll="bottom"]').click();
+  await widthPage.waitForFunction(
+    () => scrollY + innerHeight >= document.documentElement.scrollHeight - 2,
+  );
+  await widthPage.locator('[data-qv-scroll="top"]').click();
+  await widthPage.waitForFunction(() => scrollY === 0);
+  await widthPage.locator(".qv-scroll-buttons").waitFor({ state: "hidden" });
+  await widthPage.reload();
+  assert.equal(await widthPage.locator('input[name="qv-width"][value="wide"]').isChecked(), true);
+  await widthPage.locator(".qv-appearance-menu > summary").click();
+  await widthPage.locator('input[name="qv-width"][value="standard"]').check();
+  assert.equal((await widthPage.locator(".center").boundingBox()).width, standardGeometry.width);
+  await widthPage.close();
+
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   await page.locator(".qv-menu > summary").click();
   assert.equal(await page.locator(".qv-menu nav li a").count(), 12);

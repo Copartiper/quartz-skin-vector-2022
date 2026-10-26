@@ -33,6 +33,8 @@ export default {
     small: "小",
     standard: "标准",
     large: "大",
+    pageTop: "页面最顶",
+    pageBottom: "页面最底",
     wide: "宽",
     auto: "自动",
     light: "浅色",

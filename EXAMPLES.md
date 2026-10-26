@@ -2,6 +2,60 @@
 
 下面的例子可以按需要复制。除文章示例外，全站设置都放在 `quartz.config.yaml` 中本插件的 `options` 下；插件条目已经存在时，合并里面的字段即可，保留其他插件。
 
+## 给条目写一张资料卡
+
+下面是一篇地点条目，可以直接作为新文章的起点。将图片和链接换成自己站点已有的文件与页面：
+
+```markdown
+---
+title: 示例城市
+infobox:
+  title: 示例城市
+  subtitle: Example City
+  image: images/example-city.jpg
+  imageAlt: 示例城市全景
+  caption: 从山顶看到的城市
+  color:
+    light: "#c5d8ef"
+    dark: "#293e57"
+  rows:
+    - heading: 基本资料
+    - label: 所属地区
+      content: "[示例地区](places/example-region)"
+    - label: 别称
+      content: 山间之城
+    - heading: 地理
+    - label: 地形
+      content: 山地与河谷
+  below: "参阅[地点索引](places/)"
+tags: [地点]
+---
+
+示例城市是一座位于河谷中的城市。
+
+## 概况
+
+这里继续写城市的介绍。
+```
+
+`heading` 是卡片里的分组标题，`label` 和 `content` 是一项资料的名称与内容。图片和普通相对链接从站点根目录解析。桌面上正文会环绕卡片；手机上卡片排在正文前面。
+
+## 默认使用宽版页面
+
+在插件选项里设置：
+
+```yaml
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      defaultWidth: wide
+```
+
+宽版会让页面铺满浏览器，并释放空侧栏的空间。改回 `standard` 则恢复限宽、保留两侧栏位。读者在外观面板里选择过宽度后，浏览器保存的选择优先于站点默认值。
+
+右下角的圆形按钮用于跳到页面顶部或底部，不用于切换宽度；只有向下滚动且页面标题不可见时才出现。
+
 ## 两个模板，多篇文章共用
 
 比如，网站里有一组入门文章和一组参考资料。先把两组链接写在配置里：

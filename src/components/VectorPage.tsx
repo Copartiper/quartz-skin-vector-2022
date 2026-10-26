@@ -1,6 +1,4 @@
 import type { ComponentType } from "preact";
-import fs from "node:fs";
-import { execFileSync } from "node:child_process";
 import { pathToRoot } from "@quartz-community/utils";
 import type {
   FullSlug,
@@ -9,69 +7,55 @@ import type {
   QuartzComponentProps,
 } from "@quartz-community/types";
 import type { VectorSkinOptions } from "../types";
-import { VectorSkin } from "./VectorSkin";
+import { VectorInfobox } from "./VectorInfobox";
+import { createRevisionResolver } from "../revision";
+import { VectorHeader, VectorSkin } from "./VectorSkin";
 import { i18n } from "../i18n";
 
 /** One layout component for standard Quartz 5 plugin discovery. */
 export const VectorPage = ((options: VectorSkinOptions = {}) => {
   const skin = VectorSkin(options);
-  const revisionCache = new Map<string, { mtime: number; date: Date }>();
+  const Infobox = VectorInfobox() as ComponentType<QuartzComponentProps>;
+  const revision = createRevisionResolver();
+  const headers = new Map<string, ComponentType<QuartzComponentProps>>();
+  const Revision = skin.revision as ComponentType<QuartzComponentProps>;
+  const TOC = skin.toc as ComponentType<QuartzComponentProps>;
+  const Appearance = skin.appearance as ComponentType<QuartzComponentProps>;
+  const Navigation = skin.navigation as ComponentType<QuartzComponentProps>;
+  const Footer = skin.footer as ComponentType<QuartzComponentProps>;
+  const hasFooter =
+    options.footerMarkdown !== undefined ||
+    options.footerParagraphs !== undefined ||
+    options.footerLinks !== undefined;
   const Page: QuartzComponent = (props) => {
     const t = i18n(
       options.locale === "auto" || !options.locale ? (props.cfg.locale ?? "en-US") : options.locale,
     ).vector;
     const base = `${pathToRoot(props.fileData.slug ?? ("index" as FullSlug))}/`;
-    // A newly installed skin should only link to pages every Quartz site already has.
-    const Header = VectorSkin({
-      ...options,
-      navigation: options.navigation ?? [
-        { label: t.home, href: "index" },
-        { label: t.categories, href: "tags/" },
-      ],
-    }).header as ComponentType<QuartzComponentProps>;
-    let modified = props.fileData.dates?.modified;
-    const filePath = props.fileData.filePath;
-    if (filePath) {
-      try {
-        const stat = fs.statSync(filePath);
-        const cached = revisionCache.get(filePath);
-        if (cached?.mtime === stat.mtimeMs) modified = cached.date;
-        else {
-          let date = stat.mtime;
-          try {
-            const status = execFileSync("git", ["status", "--porcelain", "--", filePath], {
-              encoding: "utf8",
-              stdio: ["ignore", "pipe", "ignore"],
-            }).trim();
-            if (!status) {
-              const committed = execFileSync("git", ["log", "-1", "--format=%cI", "--", filePath], {
-                encoding: "utf8",
-                stdio: ["ignore", "pipe", "ignore"],
-              }).trim();
-              if (committed) date = new Date(committed);
-            }
-          } catch {
-            /* A site does not have to be a Git checkout. */
-          }
-          modified = date;
-          revisionCache.set(filePath, { mtime: stat.mtimeMs, date });
-        }
-      } catch {
-        /* Virtual pages may have no source file. */
-      }
+    // Default navigation is localized; reuse the header factory across all pages of that locale.
+    const locale = t.home;
+    let Header = headers.get(locale);
+    if (!Header) {
+      Header = VectorHeader({
+        ...options,
+        navigation: options.navigation ?? [
+          { label: t.home, href: "index" },
+          { label: t.categories, href: "tags/" },
+        ],
+      }) as ComponentType<QuartzComponentProps>;
+      headers.set(locale, Header);
     }
-    const Revision = skin.revision as ComponentType<QuartzComponentProps>;
-    const TOC = skin.toc as ComponentType<QuartzComponentProps>;
-    const Appearance = skin.appearance as ComponentType<QuartzComponentProps>;
-    const Navigation = skin.navigation as ComponentType<QuartzComponentProps>;
-    const Footer = skin.footer as ComponentType<QuartzComponentProps>;
-    const hasFooter =
-      options.footerMarkdown !== undefined ||
-      options.footerParagraphs !== undefined ||
-      options.footerLinks !== undefined;
+    const modified = revision(
+      props.fileData.filePath,
+      props.fileData.dates?.modified,
+      (props.ctx as { buildId?: string } | undefined)?.buildId,
+    );
     return (
       <div class="qv-auto-layout" data-qv-auto-layout>
         <Header {...props} children={undefined} />
+        <div data-qv-auto-infobox>
+          <Infobox {...props} children={undefined} />
+        </div>
         <nav class="qv-page-tools" aria-label={t.pageNavigation}>
           {!!props.fileData.toc?.length && (
             <details class="qv-dock qv-toc-menu" data-qv-dock="toc">

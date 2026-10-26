@@ -28,7 +28,8 @@
     "test",
     "vitest.config.ts",
     "EXAMPLES.md",
-    "ARCHITECTURE.md"
+    "ARCHITECTURE.md",
+    "PERFORMANCE.md"
   ],
   "exports": {
     ".": {
@@ -60,7 +61,8 @@
     "prepublishOnly": "npm run build",
     "prepare": "npm run build",
     "test:browser": "npm run build && node test/browser.mjs",
-    "test:install": "node test/installation.mjs"
+    "test:install": "node test/installation.mjs",
+    "test:performance": "npm run build && node test/performance.mjs"
   },
   "peerDependencies": {
     "preact": "^10.0.0",

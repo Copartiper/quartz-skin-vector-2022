@@ -10,3 +10,6 @@ export {
 export type { VectorSkinOptions, VectorNavigationTemplate } from "../types";
 
 export { VectorPage } from "./VectorPage";
+
+export { VectorInfobox } from "./VectorInfobox";
+export type { VectorInfoboxData } from "../types";

@@ -1,3 +1,4 @@
+import { setupTOC } from "./toc";
 import { prepareAutoLayout } from "./auto-layout";
 import {
   prepareSuggestions,
@@ -49,7 +50,9 @@ function initVector() {
     }
     apply(
       key,
-      stored && qvAllowed[key]?.includes(stored) ? stored : (header.dataset[key] ?? "standard"),
+      stored && qvAllowed[key]?.includes(stored)
+        ? stored
+        : (header.getAttribute(`data-${key}`) ?? "standard"),
     );
   }
   const onChange = (event: Event) => {
@@ -73,8 +76,15 @@ function initVector() {
   cleanup.push(() => media.removeEventListener("change", onSystemTheme));
 
   const movedTemplate = header.dataset.qvMoved ?? "{menu}已移至此处";
+  let noticeTimer = 0;
+  let activeNotice: HTMLElement | undefined;
+  cleanup.push(() => {
+    clearTimeout(noticeTimer);
+    activeNotice?.remove();
+  });
   function movedNotice(host: HTMLElement, label: string) {
-    document.querySelector(".qv-moved-notice")?.remove();
+    clearTimeout(noticeTimer);
+    activeNotice?.remove();
     const notice = document.createElement("div");
     notice.className = "qv-moved-notice";
     notice.role = "status";
@@ -85,11 +95,11 @@ function initVector() {
     const rect = host.getBoundingClientRect();
     notice.style.top = `${Math.max(8, rect.bottom + 8)}px`;
     notice.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 240))}px`;
-    const timer = window.setTimeout(() => notice.remove(), 4000);
-    cleanup.push(() => {
-      clearTimeout(timer);
+    activeNotice = notice;
+    noticeTimer = window.setTimeout(() => {
       notice.remove();
-    });
+      activeNotice = undefined;
+    }, 4000);
   }
   const menu = header.querySelector<HTMLDetailsElement>(".qv-menu");
   const menuNav = menu?.querySelector<HTMLElement>("nav");
@@ -133,8 +143,12 @@ function initVector() {
       if (
         event instanceof KeyboardEvent ||
         (event.target instanceof Node && !menu.contains(event.target))
-      )
+      ) {
+        const wasOpen = menu.open;
         menu.open = false;
+        if (wasOpen && event instanceof KeyboardEvent)
+          menu.querySelector<HTMLElement>("summary")?.focus();
+      }
     };
     document.addEventListener("click", dismiss);
     document.addEventListener("keydown", dismiss);
@@ -164,6 +178,44 @@ function initVector() {
       titlebar.before(title);
       marker.replaceWith(tocHost);
       titlebar.remove();
+    });
+  }
+  const scrollButtons = header.querySelector<HTMLElement>(".qv-scroll-buttons");
+  if (scrollButtons && title) {
+    let previousY = window.scrollY;
+    let down = false;
+    let frame = 0;
+    const refresh = () => {
+      frame = 0;
+      const y = window.scrollY;
+      if (y !== previousY) down = y > previousY;
+      previousY = y;
+      const hidden = !down || title.getBoundingClientRect().bottom > 0;
+      if (scrollButtons.hidden !== hidden) scrollButtons.hidden = hidden;
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(refresh);
+    };
+    const jump = (event: MouseEvent) => {
+      const target =
+        event.target instanceof Element
+          ? event.target.closest<HTMLElement>("[data-qv-scroll]")
+          : null;
+      if (!target) return;
+      window.scrollTo({
+        top: target.dataset.qvScroll === "top" ? 0 : document.documentElement.scrollHeight,
+        behavior: "instant",
+      });
+    };
+    scrollButtons.addEventListener("click", jump);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    cleanup.push(() => {
+      cancelAnimationFrame(frame);
+      scrollButtons.removeEventListener("click", jump);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      scrollButtons.hidden = true;
     });
   }
   const dockDesktop = window.matchMedia("(min-width: 1120px)");
@@ -219,8 +271,12 @@ function initVector() {
           event.target instanceof Node &&
           !host.contains(event.target) &&
           !(event.target instanceof Element && event.target.closest(".qv-floating-toc")))
-      )
+      ) {
+        const wasOpen = host.open;
         host.open = false;
+        if (wasOpen && event instanceof KeyboardEvent)
+          host.querySelector<HTMLElement>("summary")?.focus();
+      }
     };
     place();
     button.addEventListener("click", toggle);
@@ -258,6 +314,7 @@ function initVector() {
     const refresh = () => {
       if (!frame) frame = requestAnimationFrame(updateFloating);
     };
+    let floatingCleanup: (() => void) | undefined;
     const open = () => {
       floating.hidden = true;
       tocHost.classList.add("qv-toc-floating-open");
@@ -271,12 +328,14 @@ function initVector() {
           if (tocHost.open) return;
           marker.replaceWith(panel);
           tocHost.removeEventListener("toggle", restore);
+          floatingCleanup = undefined;
         };
         tocHost.addEventListener("toggle", restore);
-        cleanup.push(() => {
+        floatingCleanup = () => {
           if (marker.parentNode) marker.replaceWith(panel);
           tocHost.removeEventListener("toggle", restore);
-        });
+          floatingCleanup = undefined;
+        };
       }
       tocHost.open = true;
       tocHost.querySelector<HTMLElement>("summary")?.focus();
@@ -297,6 +356,7 @@ function initVector() {
     refresh();
     cleanup.push(() => {
       cancelAnimationFrame(frame);
+      floatingCleanup?.();
       floating.remove();
       observer.disconnect();
       tocHost.removeEventListener("toggle", onToggle);
@@ -305,6 +365,37 @@ function initVector() {
     });
   }
 
+  const dropdowns = [
+    ...document.querySelectorAll<HTMLDetailsElement>(".qv-menu, [data-qv-dock], .qv-graph-tool"),
+  ];
+  const onDropdown = (event: Event) => {
+    const opened = event.target;
+    if (!(opened instanceof HTMLDetailsElement) || !opened.open) return;
+    dropdowns.forEach((other) => {
+      if (other !== opened) other.open = false;
+    });
+  };
+  const dismissGraph = (event: Event) => {
+    const graph = dropdowns.find((host) => host.classList.contains("qv-graph-tool"));
+    if (!graph?.open) return;
+    if (event instanceof KeyboardEvent && event.key === "Escape") {
+      graph.open = false;
+      graph.querySelector<HTMLElement>("summary")?.focus();
+    } else if (
+      event instanceof MouseEvent &&
+      event.target instanceof Node &&
+      !graph.contains(event.target)
+    )
+      graph.open = false;
+  };
+  document.addEventListener("click", dismissGraph);
+  document.addEventListener("keydown", dismissGraph);
+  cleanup.push(() => {
+    document.removeEventListener("click", dismissGraph);
+    document.removeEventListener("keydown", dismissGraph);
+  });
+  dropdowns.forEach((host) => host.addEventListener("toggle", onDropdown));
+  cleanup.push(() => dropdowns.forEach((host) => host.removeEventListener("toggle", onDropdown)));
   const article = document.querySelector<HTMLElement>("article.popover-hint, article");
   const content = document.querySelector<HTMLElement>(".center");
   if (content && !document.getElementById("qv-content")) {
@@ -329,6 +420,7 @@ function initVector() {
     };
     const openSearch = (event: Event) => {
       event.preventDefault();
+      ++revision;
       closeSuggestions();
       const trigger = search?.querySelector<HTMLElement>(".search-button, button");
       const query = searchForm.querySelector<HTMLInputElement>("input")?.value ?? "";
@@ -352,6 +444,7 @@ function initVector() {
       );
       if (active >= 0) input.setAttribute("aria-activedescendant", choices()[active]?.id ?? "");
       else input.removeAttribute("aria-activedescendant");
+      if (active >= 0) choices()[active]?.scrollIntoView({ block: "nearest" });
     };
     const showSuggestions = async () => {
       const current = ++revision;
@@ -481,30 +574,8 @@ function initVector() {
     bottomGraph.addEventListener("toggle", onGraphToggle);
     cleanup.push(() => bottomGraph.removeEventListener("toggle", onGraphToggle));
   }
-  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".qv-toc a"));
-  const headingLinks = new Map(links.map((link) => [link.getAttribute("href")?.slice(1), link]));
-  let activeLink: HTMLAnchorElement | undefined;
-  if (article && links.length && "IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const heading = entries.find((entry) => entry.isIntersecting)?.target;
-        if (!heading) return;
-        const next = headingLinks.get(heading.id);
-        if (next === activeLink) return;
-        activeLink?.removeAttribute("aria-current");
-        next?.setAttribute("aria-current", "location");
-        activeLink = next;
-      },
-      { rootMargin: "-8% 0px -65% 0px" },
-    );
-    article
-      .querySelectorAll("h1[id], h2[id], h3[id], h4[id], h5[id], h6[id]")
-      .forEach((heading) => observer.observe(heading));
-    cleanup.push(() => {
-      observer.disconnect();
-      activeLink?.removeAttribute("aria-current");
-    });
-  }
+  const tocPanel = document.querySelector<HTMLElement>('[data-qv-panel="toc"]');
+  if (tocPanel) cleanup.push(setupTOC(tocPanel, article));
   qvDispose = () => {
     cleanup.forEach((fn) => fn());
     qvDispose = undefined;

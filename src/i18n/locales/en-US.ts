@@ -33,6 +33,8 @@ export default {
     small: "Small",
     standard: "Standard",
     large: "Large",
+    pageTop: "Top of page",
+    pageBottom: "Bottom of page",
     wide: "Wide",
     auto: "Automatic",
     light: "Light",
