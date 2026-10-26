@@ -236,13 +236,34 @@ try {
     await page
       .locator(".sidebar.left > [data-qv-panel]")
       .evaluateAll((els) => els.map((el) => el.dataset.qvPanel)),
-    ["toc", "explorer"],
+    ["toc"],
   );
+  assert.equal(await page.locator('.sidebar.right > [data-qv-panel="explorer"]').count(), 1);
   await page.reload();
-  assert.equal(await page.locator(".sidebar.left > [data-qv-panel]").count(), 2);
+  assert.equal(await page.locator(".sidebar.left > [data-qv-panel]").count(), 1);
+  assert.equal(await page.locator('.sidebar.right > [data-qv-panel="explorer"]').count(), 1);
   const newGeometry = await page.locator(".center").boundingBox();
   assert.equal(newGeometry.x, geometry.x);
   assert.equal(newGeometry.width, geometry.width);
+  await page.locator(".qv-appearance-menu > summary").click();
+  await page.locator('[data-qv-panel="appearance"] .qv-dock-pin').click();
+  assert.deepEqual(
+    await page
+      .locator(".sidebar.right > [data-qv-panel]")
+      .evaluateAll((els) => els.map((el) => el.dataset.qvPanel)),
+    ["appearance", "explorer"],
+  );
+  await page.locator('input[name="qv-width"][value="wide"]').check();
+  const rightPanel = await page
+    .locator('.sidebar.right > [data-qv-panel="explorer"]')
+    .boundingBox();
+  const wideCenter = await page.locator(".center").boundingBox();
+  assert(
+    rightPanel.x >= wideCenter.x + wideCenter.width,
+    "explorer keeps the right sidebar in wide mode",
+  );
+  await page.locator('input[name="qv-width"][value="standard"]').check();
+  await page.locator('[data-qv-panel="appearance"] .qv-dock-pin').click();
   for (const id of ["toc", "explorer"])
     await page.locator(`[data-qv-panel="${id}"] .qv-dock-pin`).click();
   assert.equal(await page.locator(".qv-titlebar > .qv-toc-menu + .article-title").count(), 1);

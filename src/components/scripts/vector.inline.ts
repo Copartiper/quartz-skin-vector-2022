@@ -223,7 +223,7 @@ function initVector() {
     const id = host.dataset.qvDock!;
     const panel = document.querySelector<HTMLElement>(`[data-qv-panel="${id}"]`);
     const target = document.querySelector<HTMLElement>(
-      `#quartz-body > .sidebar.${id === "appearance" ? "right" : "left"}`,
+      `#quartz-body > .sidebar.${id === "toc" ? "left" : "right"}`,
     );
     const button = panel?.querySelector<HTMLButtonElement>(".qv-dock-pin");
     if (!panel || !target || !button) return;

@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- 探索菜单固定时放到右侧栏，位于外观面板下方。
+
 - 「标准／宽」控制页面是否铺满浏览器；宽版会释放没有固定菜单的侧栏空间。
 - 统一下拉菜单阴影，完善搜索焦点反馈、候选键盘选择和 Escape 关闭菜单后的焦点恢复。
 - 页头组件按界面语言复用，Infobox Markdown 使用有界缓存。
