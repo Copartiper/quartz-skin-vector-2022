@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- ea299e9: Add a responsive, theme-aware Infobox component configured in article frontmatter, with images, grouped fields, safe Markdown and custom group colors.
+- 044f56a: Add a standalone VectorPage component and a default search-index emitter for native GitHub installation. Reuse standard Quartz components without site-specific layout adapters, preserve unrelated widgets and existing footers, and document configuration through plugin options.
+- ea299e9: Refine Vector reading interactions: hierarchical TOC with long-page folding, deep-link expansion and stable section tracking; quieter menus, keyboard dismissal and search focus feedback. Wide layouts reclaim empty sidebar space and lift the page width cap. Add circular top/bottom controls shown only while scrolling down beyond the article title.
+- 9c194d5: Add a Vector 2022 skin with responsive layout, localized navigation, table of
+  contents, persistent appearance settings and GPL source attribution.
+
+### Patch Changes
+
+- b00ef78: Reduce repeated date and Markdown processing during page rendering. Prepare search suggestions once, retain only the best ten matches, debounce input with composition support, and batch scrolling and SPA initialization updates with instance-safe cleanup.
+- 9c194d5: Add persistent docking for contents, explorer and appearance panels with fixed reading-column placement.
+- b4535ea: Dock the Explore menu in the right sidebar below Appearance, preserving pin preferences and responsive behavior.
+- 9c194d5: Use configurable theme-aware footer text colors, defaulting to black in light mode and white in dark mode.
+- 007a31d: Match footer text and link states to article colors and use a transparent appearance button with theme-aware icon colors.
+- 007a31d: Override the native footer opacity so footer colors render at the same intensity as article colors.
+- 007a31d: Remove footer paragraph gaps and leave one text line between the revision and footer body.
+- 9c194d5: Align typography, tables, sidebars, responsive media and dark colors with the supplied Vector 2022 styles.
+- 9c194d5: Add a grouped main menu with persistent sidebar pinning and responsive dropdown fallback.
+- 9c194d5: Render configurable footer Markdown without a separate background, and omit all contents controls on pages without headings.
+- 007a31d: Support per-navbox theme colors, render current-page links as text, and add a subtle appearance-button hover background.
+- 007a31d: Add configurable MediaWiki-style navigation templates and bottom category bar styling.
+- ea299e9: Reduce repeated Git status queries and component construction during page builds. Cache bounded Infobox Markdown output, replace per-scroll heading measurements with layout-invalidated positions and binary search, and release temporary menu cleanup closures promptly. Add reproducible rendering and scrolling benchmarks.
+- 007a31d: Hide site headers in article previews and emphasize the search term in the full-search action.
+- 9c194d5: Force narrow-screen panels into buttons, add floating contents and relocation hints, and support configurable footer paragraphs and links.
+- 9c194d5: Add title/description suggestions with full-search handoff, collapsible left column, page background framing and a revision footer.
+- 9c194d5: Keep page widths stable during menu pinning and support graph tools and revision metadata in the site footer.
+- 9c194d5: Add configurable logo and grouped navigation, a search form, separate page backgrounds, and consistent main menu controls.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
