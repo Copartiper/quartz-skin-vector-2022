@@ -1,0 +1,46 @@
+# 将这些设置合并到现有的 quartz.config.yaml 中。
+# 保留站点的其他插件，并按需创建链接指向的页面。
+configuration:
+  locale: zh-CN
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      locale: zh-CN
+      wordmark: 我的知识库
+      tagline: 记录、连接、分享
+      logoUrl: static/icon.png
+      logoAlt: 站点标志
+      revisionTimeZone: Asia/Shanghai
+      defaultTheme: auto
+      defaultTextSize: standard
+      defaultWidth: standard
+      showAppearance: true
+      navigation:
+        - label: 首页
+          href: index
+        - label: 分类索引
+          href: tags/
+        - section: 社群
+          label: 关于本站
+          href: about
+      navigationTemplates:
+        - title: "[我的知识库](index)"
+          color:
+            light: "#c5d8ef"
+            dark: "#293e57"
+          rows:
+            - label: 入门
+              content: "[首页](index) · [关于本站](about)"
+          below: "[分类索引](tags/)"
+      footerMarkdown: |
+        欢迎来到**我的知识库**。
+
+        了解更多[关于本站](about)的信息。
+      footerLinks:
+        - label: 首页
+          href: index
+        - label: 分类索引
+          href: tags/
+        - label: 关于本站
+          href: about

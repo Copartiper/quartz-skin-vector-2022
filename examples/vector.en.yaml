@@ -1,0 +1,46 @@
+# Merge these settings into your existing quartz.config.yaml.
+# Keep the rest of your site's plugins. Create the linked pages as needed.
+configuration:
+  locale: en-US
+plugins:
+  - source: github:Copartiper/quartz-skin-vector-2022
+    enabled: true
+    options:
+      locale: en-US
+      wordmark: My Knowledge Base
+      tagline: Collect, connect, share
+      logoUrl: static/icon.png
+      logoAlt: Site logo
+      revisionTimeZone: UTC
+      defaultTheme: auto
+      defaultTextSize: standard
+      defaultWidth: standard
+      showAppearance: true
+      navigation:
+        - label: Home
+          href: index
+        - label: Categories
+          href: tags/
+        - section: Community
+          label: About
+          href: about
+      navigationTemplates:
+        - title: "[My Knowledge Base](index)"
+          color:
+            light: "#c5d8ef"
+            dark: "#293e57"
+          rows:
+            - label: Getting started
+              content: "[Home](index) · [About](about)"
+          below: "[Categories](tags/)"
+      footerMarkdown: |
+        Welcome to **My Knowledge Base**.
+
+        Learn more [about this site](about).
+      footerLinks:
+        - label: Home
+          href: index
+        - label: Categories
+          href: tags/
+        - label: About
+          href: about

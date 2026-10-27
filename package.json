@@ -15,6 +15,7 @@
   "files": [
     "dist",
     "README.md",
+    "README.zh_CN.md",
     "LICENSE",
     "CHANGELOG.md",
     "LICENSE.Vector",
@@ -29,7 +30,8 @@
     "vitest.config.ts",
     "EXAMPLES.md",
     "ARCHITECTURE.md",
-    "PERFORMANCE.md"
+    "PERFORMANCE.md",
+    "examples"
   ],
   "exports": {
     ".": {
